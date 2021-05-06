@@ -1,3 +1,6 @@
 [submodule "caravel-lite"]
 	path = caravel
 	url = https://github.com/efabless/caravel-lite
+[submodule "mflowgen"]
+	path = mflowgen/mflowgen
+	url = https://github.com/mflowgen/mflowgen

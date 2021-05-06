@@ -23,16 +23,23 @@ CARAVEL_LITE?=1
 
 ifeq ($(CARAVEL_LITE),1) 
 	CARAVEL_NAME := caravel-lite
-	CARAVEL_REPO := https://github.com/efabless/caravel-lite 
-	CARAVEL_BRANCH := main
+	CARAVEL_REPO ?= https://github.com/efabless/caravel-lite 
+	CARAVEL_BRANCH ?= main
 else
 	CARAVEL_NAME := caravel
-	CARAVEL_REPO := https://github.com/efabless/caravel 
-	CARAVEL_BRANCH := master
+	CARAVEL_REPO ?= https://github.com/efabless/caravel 
+	CARAVEL_BRANCH ?= master
 endif
 
 # Install caravel as submodule, (1): submodule, (0): clone
 SUBMODULE?=1
+
+# Information about MFLOWGEN
+# Repository Branch and Location can be changed!
+MFLOWGEN_ROOT ?=$(PWD)/mflowgen/mflowgen
+MFLOWGEN_NAME ?= mflowgen
+MFLOWGEN_REPO ?= https://github.com/mflowgen/mflowgen
+MFLOWGEN_BRANCH ?= master
 
 # Include Caravel Makefile Targets
 .PHONY: %
@@ -70,15 +77,18 @@ BLOCKS = $(shell cd openlane && find * -maxdepth 0 -type d)
 $(BLOCKS): %:
 	cd openlane && $(MAKE) $*
 
-# Install caravel
 .PHONY: install
-install:
+install: install_caravel install_mflowgen
+
+# Install caravel
+.PHONY: install_caravel
+install_caravel:
 ifeq ($(SUBMODULE),1)
 	@echo "Installing $(CARAVEL_NAME) as a submodule.."
 # Convert CARAVEL_ROOT to relative path because .gitmodules doesn't accept '/'
 	$(eval CARAVEL_PATH := $(shell realpath --relative-to=$(shell pwd) $(CARAVEL_ROOT)))
 	@if [ ! -d $(CARAVEL_ROOT) ]; then git submodule add --name $(CARAVEL_NAME) $(CARAVEL_REPO) $(CARAVEL_PATH); fi
-	@git submodule update --init
+	@git submodule update --init $(CARAVEL_PATH)
 	@cd $(CARAVEL_ROOT); git checkout $(CARAVEL_BRANCH)
 	$(MAKE) simlink
 else
@@ -86,6 +96,17 @@ else
 	@git clone $(CARAVEL_REPO) $(CARAVEL_ROOT)
 	@cd $(CARAVEL_ROOT); git checkout $(CARAVEL_BRANCH)
 endif
+
+.PHONY: install_mflowgen
+install_mflowgen:
+	# Install mflowgen as submodule
+	@echo "Installing $(MFLOWGEN_NAME) as a submodule.."
+# Convert CARAVEL_ROOT to relative path because .gitmodules doesn't accept '/'
+	$(eval MFLOWGEN_PATH := $(shell realpath --relative-to=$(shell pwd) $(MFLOWGEN_ROOT)))
+	@if [ ! -d $(MFLOWGEN_ROOT) ]; then git submodule add --name $(MFLOWGEN_NAME) $(MFLOWGEN_REPO) $(MFLOWGEN_PATH); fi
+	@git submodule update --init $(MFLOWGEN_PATH)
+	cd $(MFLOWGEN_ROOT); git checkout $(MFLOWGEN_BRANCH)
+	$(MAKE) install_mflowgen_venv
 
 # Create symbolic links to caravel's main files
 .PHONY: simlink
@@ -100,11 +121,23 @@ simlink: check-caravel
 	cd openlane/user_project_wrapper &&\
 	ln -sf $(PIN_CFG_PATH) pin_order.cfg
 
+# Install mflowgen virtual enviroment
+.PHONY: install_mflowgen_venv
+install_mflowgen_venv: check-mflowgen
+	cd $(MFLOWGEN_ROOT)
+	@echo "Installing virtual pyhon enviroment for $(MFLOWGEN_NAME)"; 
+	( \
+		export TOP=${MFLOWGEN_ROOT}; \
+		cd $(MFLOWGEN_ROOT); \
+		python3 -m venv venv; \
+		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
+		pip install -e .; )
+
 # Update Caravel
 .PHONY: update_caravel
 update_caravel: check-caravel
 ifeq ($(SUBMODULE),1)
-	@git submodule update --init --recursive
+	@git submodule update --init --recursive $(CARAVEL_ROOT)
 	cd $(CARAVEL_ROOT) && \
 	git checkout $(CARAVEL_BRANCH) && \
 	git pull
@@ -114,9 +147,21 @@ else
 		git pull
 endif
 
-# Uninstall Caravel
+# Update Caravel
+.PHONY: update_mflowgen
+update_mflowgen: check-mflowgen
+	@git submodule update --init --recursive $(MFLOWGEN_ROOT)
+	cd $(MFLOWGEN_ROOT) && \
+	git checkout $(MFLOWGEN_BRANCH) && \
+	git pull
+
 .PHONY: uninstall
-uninstall: 
+uninstall: uninstall_caravel uninstall_mflowgen
+
+# Uninstall Caravel
+.PHONY: uninstall_caravel
+uninstall_caravel: 
+	# Caravel
 ifeq ($(SUBMODULE),1)
 	git config -f .gitmodules --remove-section "submodule.$(CARAVEL_NAME)"
 	git add .gitmodules
@@ -127,6 +172,21 @@ ifeq ($(SUBMODULE),1)
 else
 	rm -rf $(CARAVEL_ROOT)
 endif
+
+# Uninstall Mflowgen
+.PHONY: uninstall_mflowgen
+uninstall_mflowgen:
+	git config -f .gitmodules --remove-section "submodule.$(MFLOWGEN_NAME)"
+	git config -f .git/config --remove-section "submodule.$(MFLOWGEN_NAME)"
+	git add .gitmodules
+	git submodule deinit -f $(MFLOWGEN_ROOT)
+	git rm -f --cached $(MFLOWGEN_ROOT)
+	rm -rf .git/modules/$(MFLOWGEN_NAME)
+	# only remove mflowgen root when in this repository
+ifeq ($(MFLOWGEN_ROOT),$(PWD)/mflowgen/mflowgen)
+	rm -rf $(MFLOWGEN_ROOT)
+endif
+	
 
 # Install Openlane
 .PHONY: openlane
@@ -161,6 +221,12 @@ clean:
 check-caravel:
 	@if [ ! -d "$(CARAVEL_ROOT)" ]; then \
 		echo "Caravel Root: "$(CARAVEL_ROOT)" doesn't exists, please export the correct path before running make. "; \
+		exit 1; \
+	fi
+
+check-mflowgen:
+	@if [ ! -d "$(MFLOWGEN_ROOT)" ]; then \
+		echo "Mflowgen Root: "$(MFLOWGEN_ROOT)" doesn't exists, please export the correct path before running make. "; \
 		exit 1; \
 	fi
 
