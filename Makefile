@@ -138,7 +138,9 @@ install_mflowgen_venv: check-mflowgen
 		python3 -m venv venv; \
 		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
 		pip install -e .; )
+		$(MAKE) install_mflowgen_venv
 
+export PDK_ROOT
 
 .PHONY: install_ADK
 install_ADK: check-pdk
@@ -147,7 +149,7 @@ install_ADK: check-pdk
 	@if [ ! -d $(SKY_ADK_PATH) ]; then git submodule add --name SKY130_ADK $(SKY_ADK_REPO) $(ADK_PATH); fi
 	@git submodule update --init $(ADK_PATH)
 	cd $(SKY_ADK_PATH); git checkout $(SKY_ADK_BRANCH)
-
+	cd $(SKY_ADK_PATH) && $(MAKE) install
 
 # Update Caravel
 .PHONY: update_caravel
@@ -178,6 +180,7 @@ update_ADK: check-ADK
 	cd $(SKY_ADK_PATH) && \
 	git checkout $(SKY_ADK_BRANCH) && \
 	git pull
+	cd $(SKY_ADK_PATH) && $(MAKE) install
 
 .PHONY: uninstall
 uninstall: uninstall_caravel uninstall_mflowgen uninstall_ADK
