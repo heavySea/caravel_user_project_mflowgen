@@ -41,6 +41,12 @@ MFLOWGEN_NAME ?= mflowgen
 MFLOWGEN_REPO ?= https://github.com/mflowgen/mflowgen
 MFLOWGEN_BRANCH ?= master
 
+# The mflowgen ADK for Skywater130 PDK
+# path is fixed
+SKY_ADK_PATH := $(PWD)/mflowgen/SKY130_ADK
+SKY_ADK_REPO ?= https://code.stanford.edu/ee272/skywater-130nm-adk
+SKY_ADK_BRANCH ?= master
+
 # Include Caravel Makefile Targets
 .PHONY: %
 %: 
@@ -78,7 +84,7 @@ $(BLOCKS): %:
 	cd openlane && $(MAKE) $*
 
 .PHONY: install
-install: install_caravel install_mflowgen
+install: install_caravel install_mflowgen install_ADK
 
 # Install caravel
 .PHONY: install_caravel
@@ -133,6 +139,16 @@ install_mflowgen_venv: check-mflowgen
 		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
 		pip install -e .; )
 
+
+.PHONY: install_ADK
+install_ADK: check-pdk
+	@echo "Installing mflowgen Skywater ADK as a submodule in $(SKY_ADK_PATH)"
+	$(eval ADK_PATH := $(shell realpath --relative-to=$(shell pwd) $(SKY_ADK_PATH)))
+	@if [ ! -d $(SKY_ADK_PATH) ]; then git submodule add --name SKY130_ADK $(SKY_ADK_REPO) $(ADK_PATH); fi
+	@git submodule update --init $(ADK_PATH)
+	cd $(SKY_ADK_PATH); git checkout $(SKY_ADK_BRANCH)
+
+
 # Update Caravel
 .PHONY: update_caravel
 update_caravel: check-caravel
@@ -147,7 +163,7 @@ else
 		git pull
 endif
 
-# Update Caravel
+# Update mflowgen
 .PHONY: update_mflowgen
 update_mflowgen: check-mflowgen
 	@git submodule update --init --recursive $(MFLOWGEN_ROOT)
@@ -155,12 +171,20 @@ update_mflowgen: check-mflowgen
 	git checkout $(MFLOWGEN_BRANCH) && \
 	git pull
 
+# Update SKY ADK
+.PHONY: update_ADK
+update_ADK: check-ADK
+	@git submodule update --init --recursive $(SKY_ADK_PATH)
+	cd $(SKY_ADK_PATH) && \
+	git checkout $(SKY_ADK_BRANCH) && \
+	git pull
+
 .PHONY: uninstall
-uninstall: uninstall_caravel uninstall_mflowgen
+uninstall: uninstall_caravel uninstall_mflowgen uninstall_ADK
 
 # Uninstall Caravel
 .PHONY: uninstall_caravel
-uninstall_caravel: 
+uninstall_caravel: check-caravel
 	# Caravel
 ifeq ($(SUBMODULE),1)
 	git config -f .gitmodules --remove-section "submodule.$(CARAVEL_NAME)"
@@ -175,7 +199,7 @@ endif
 
 # Uninstall Mflowgen
 .PHONY: uninstall_mflowgen
-uninstall_mflowgen:
+uninstall_mflowgen: check-mflowgen
 	git config -f .gitmodules --remove-section "submodule.$(MFLOWGEN_NAME)"
 	git config -f .git/config --remove-section "submodule.$(MFLOWGEN_NAME)"
 	git add .gitmodules
@@ -186,6 +210,17 @@ uninstall_mflowgen:
 ifeq ($(MFLOWGEN_ROOT),$(PWD)/mflowgen/mflowgen)
 	rm -rf $(MFLOWGEN_ROOT)
 endif
+
+# Uninstall ADK
+.PHONY: uninstall_ADK
+uninstall_ADK: check-ADK
+	git config -f .gitmodules --remove-section "submodule.SKY130_ADK"
+	git config -f .git/config --remove-section "submodule.SKY130_ADK"
+	git add .gitmodules
+	git submodule deinit -f $(SKY_ADK_PATH)
+	git rm -f --cached $(SKY_ADK_PATH)
+	rm -rf .git/modules/$(SKY130_ADK)
+	rm -rf $(SKY_ADK_PATH)
 	
 
 # Install Openlane
@@ -212,6 +247,7 @@ run-precheck: check-precheck check-pdk check-caravel
 pdk-nonnative: skywater-pdk skywater-library skywater-timing open_pdks
 	docker run --rm -v $(PDK_ROOT):$(PDK_ROOT) -v $(pwd):/user_project -v $(CARAVEL_ROOT):$(CARAVEL_ROOT) -e CARAVEL_ROOT=$(CARAVEL_ROOT) -e PDK_ROOT=$(PDK_ROOT) -u $(shell id -u $(USER)):$(shell id -g $(USER)) efabless/openlane:current sh -c "cd $(CARAVEL_ROOT); make build-pdk; make gen-sources"
 
+
 # Clean 
 .PHONY: clean
 clean:
@@ -227,6 +263,12 @@ check-caravel:
 check-mflowgen:
 	@if [ ! -d "$(MFLOWGEN_ROOT)" ]; then \
 		echo "Mflowgen Root: "$(MFLOWGEN_ROOT)" doesn't exists, please export the correct path before running make. "; \
+		exit 1; \
+	fi
+
+check-ADK:
+	@if [ ! -d "$(SKY_ADK_PATH)" ]; then \
+		echo "Mflowgen Root: "$(SKY_ADK_PATH)" doesn't exists, please export the correct path before running make. "; \
 		exit 1; \
 	fi
 
