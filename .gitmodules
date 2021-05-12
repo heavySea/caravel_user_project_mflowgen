@@ -4,3 +4,6 @@
 [submodule "mflowgen"]
 	path = mflowgen/mflowgen
 	url = https://github.com/mflowgen/mflowgen
+[submodule "SKY130_ADK"]
+	path = mflowgen/SKY130_ADK
+	url = https://github.com/heavySea/skywater-130nm-adk
