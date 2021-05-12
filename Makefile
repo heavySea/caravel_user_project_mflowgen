@@ -44,7 +44,7 @@ MFLOWGEN_BRANCH ?= master
 # The mflowgen ADK for Skywater130 PDK
 # path is fixed
 SKY_ADK_PATH := $(PWD)/mflowgen/SKY130_ADK
-SKY_ADK_REPO ?= https://code.stanford.edu/ee272/skywater-130nm-adk
+SKY_ADK_REPO ?= https://github.com/heavySea/skywater-130nm-adk
 SKY_ADK_BRANCH ?= master
 
 # Include Caravel Makefile Targets
@@ -138,7 +138,6 @@ install_mflowgen_venv: check-mflowgen
 		python3 -m venv venv; \
 		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
 		pip install -e .; )
-		$(MAKE) install_mflowgen_venv
 
 export PDK_ROOT
 

@@ -14,8 +14,8 @@ For now only the changes are listed:
 	Change SKY130 ADK repository by settings
 	- SKY_ADK_REPO ur and SKY_ADK_BRANCH
 	- the Path and name of the repository is fixed to mflowgen/SKY130_ADK
-- Starting to automate the ADK standard view
+- Automate the ADK standard view
 	- Copy more files from the open-pdk generated files
-	- Use the ITF from [this PR](https://github.com/google/skywater-pdk/pull/185)
+	- Newly generated files for Synopsys and Cadence tools are copied into the PDK for reuse
 
 
