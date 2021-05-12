@@ -6,8 +6,16 @@
 # Cadence Innovus for Place and Route
 # Mentor Modelsim for Simulation (Replaceable with VCS)
 # Synopsys PrimeTime (+ PX / Power Compiler) for Timing Sign-Off
-# Magic for DRC (Replaceable with Calibre)
+# Magic for DRC 
+# LVS with netgen
 #
+# This is excepted to be build from the Makefile in the root of the
+# caravel user project repository
+# Otherwise export following enviroment variables:
+#
+# export MFLOWGEN_PATH=/path/to/SKY130_ADK_Repository
+#
+
 # Author : Maximilian Koschay
 # Date   : 07.05.2021
 
@@ -51,7 +59,7 @@ def construct():
   # ADK node
   #-----------------------------------------------------------------------
 
-  g.set_adk( 'stm-65nm' )
+  g.set_adk( adk_parameters["adk"] )
   adk = g.get_adk_step()
 
   #-----------------------------------------------------------------------

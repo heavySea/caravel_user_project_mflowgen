@@ -43,9 +43,11 @@ MFLOWGEN_BRANCH ?= master
 
 # The mflowgen ADK for Skywater130 PDK
 # path is fixed
-SKY_ADK_PATH := $(PWD)/mflowgen/SKY130_ADK
+SKY_ADK_PATH ?= $(PWD)/mflowgen/SKY130_ADK
 SKY_ADK_REPO ?= https://github.com/heavySea/skywater-130nm-adk
 SKY_ADK_BRANCH ?= master
+
+M_FLOWS := $(PWD)/mflowgen/flows
 
 # Include Caravel Makefile Targets
 .PHONY: %
@@ -77,11 +79,28 @@ $(DV_PATTERNS): verify-% : ./verilog/dv/%
                 -u $(id -u $$USER):$(id -g $$USER) efabless/dv_setup:latest \
                 sh -c $(VERIFY_COMMAND)
 				
-# Openlane Makefile Targets
-BLOCKS = $(shell cd openlane && find * -maxdepth 0 -type d)
+# Mflowgen Makefile Targets
+BLOCKS = $(shell cd mflowgen/flows && find * -maxdepth 0 -type d)
+
+BUILD_BLOCKS = $(foreach block, $(BLOCKS), mflowgen-$(block))
+
 .PHONY: $(BLOCKS)
-$(BLOCKS): %:
-	cd openlane && $(MAKE) $*
+$(BUILD_BLOCKS): mflowgen-%: mflowgen/build_%
+	( \
+		export TOP=${MFLOWGEN_ROOT}; \
+		cd mflowgen/build_${*}; \
+		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
+		export MFLOWGEN_PATH=${SKY_ADK_PATH}; \
+		mflowgen run --design ${M_FLOWS}/${*}; \
+		make all; )
+
+mflowgen/build_%:
+	mkdir $@ 
+
+CLEAN_BLOCKS = $(foreach block, $(BLOCKS), clean-$(block))
+#.PHONY: clean_$(BLOCKS)
+$(CLEAN_BLOCKS): clean-% :
+	rm -rf mflowgen/build_$*
 
 .PHONY: install
 install: install_caravel install_mflowgen install_ADK
