@@ -35,18 +35,15 @@ def construct():
 
   parameters = {
     'construct_path' : __file__,
-    'design_name'    : 'memory',
+    'design_name'    : 'user_project_wrapper',
     'topographical'  : True,
-    'saif_instance'  : 'testbench/scm_1r_1w_be_inst'
+    'saif_instance'  : '',
+    'clock_period'   : 10.0 
   }
 
   adk_parameters = {
     'adk'            : 'skywater-130nm',
-    'adk_view'       : 'view-extended',
-    'chip_level'     : False,
-    'stdlibs'        : 'CORE65LPSVT,CORE65LPHVT,CORE65LPLVT',
-    'link_stdlibs'   : '',
-    'iolibs'         : '',
+    'adk_view'       : 'view-standard'
   }
 
   #-----------------------------------------------------------------------
@@ -66,19 +63,17 @@ def construct():
   # Design node
   #-----------------------------------------------------------------------
 
-  rtl            = Step( this_dir + '/rtl' )
-  testbench      = Step( this_dir + '/testbench')
+  rtl            = Step( this_dir + '/design-rtl' )
   constraints    = Step( this_dir + '/design-constraints')
 
   #-----------------------------------------------------------------------
   # Default nodes
   #-----------------------------------------------------------------------
 
-  dc_cmos65      = Step( 'synopsys-dc-synthesis-cmos65-additions',  default=True )
   dc             = Step( 'synopsys-dc-synthesis',                   default=True )
-  iflow          = Step( 'cadence-innovus-flowsetup-cmos056',       default=True )
+  iflow          = Step( 'cadence-innovus-flowsetup',       				default=True )
   init           = Step( 'cadence-innovus-init',                    default=True )
-  power          = Step( 'cadence-innovus-power-cmos056',           default=True )
+  power          = Step( 'cadence-innovus-power',           				default=True )
   place          = Step( 'cadence-innovus-place',                   default=True )
   cts            = Step( 'cadence-innovus-cts',                     default=True )
   postcts_hold   = Step( 'cadence-innovus-postcts_hold',            default=True )
@@ -86,46 +81,35 @@ def construct():
   postroute      = Step( 'cadence-innovus-postroute',               default=True )
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   signoff        = Step( 'cadence-innovus-signoff',                 default=True )
-  vcs_gl_sim     = Step( 'synopsys-vcs-sim',                        default=True )
-  gl_power_est   = Step( 'synopsys-pt-power',                       default=True )
+
     
   #-----------------------------------------------------------------------
   # Custom nodes
   #-----------------------------------------------------------------------
   
-  # custom_nide = Steo( ../../custom_steps/custom-step )
+  innovus_caravel  = Step ( this_dir + '/innovus-customizations' )
 
   #-----------------------------------------------------------------------
   # Manipulate nodes
   #-----------------------------------------------------------------------
+	
+  # remove floorplaning and pin assignment for now
+  init_order = innovus_caravel.get_param('iInit_order')
+  init.update_params({'order' : init_order})
 
-  # Synopsys DC synthesis śTM ADK additions
-  # The default DC node must be modified to support the STM65nm ADK
-  dc.extend_inputs( dc_cmos65.all_outputs() )
+  # Add setup.tcl to inputs of iflow step and initial .def file to inputs of init step
+  iflow.extend_inputs(['setup.tcl'])
+  init.extend_inputs(['user_project_wrapper.def'])
 
-  nom_lib_condition = adk.get_param('nom_conditions')
-  dc_cmos65.update_params( {'nom_conditions' : nom_lib_condition} )
-  dc.update_params( dc_cmos65.params(), allow_new=True )
-
-
-  # Change Synopsys DC Step Inputs to enable multi-file designs
-  # Extend the inputs... the read_design.tcl replaces the original script inside the step
-  dc.extend_inputs( ["read-design.tcl", "rtl"] )
-
-
-  # GL Power estimation
-  vcs_gl_sim.update_params(testbench.params())
-  gl_power_est.update_params( {'lib_op_condition' : nom_lib_condition})
-
-
+	
   #-----------------------------------------------------------------------
   # Graph -- Add nodes
   #-----------------------------------------------------------------------
 
   g.add_step( rtl            )
   g.add_step( constraints    )
-  g.add_step( dc_cmos65      )
   g.add_step( dc             )
+  g.add_step( innovus_caravel)
   g.add_step( iflow          )
   g.add_step( init           )
   g.add_step( power          )
@@ -136,10 +120,6 @@ def construct():
   g.add_step( postroute      )
   g.add_step( postroute_hold )
   g.add_step( signoff        )
-
-  g.add_step( testbench      )
-  g.add_step( vcs_gl_sim     )
-  g.add_step( gl_power_est   )
 
   #-----------------------------------------------------------------------
   # Graph -- Add edges
@@ -159,7 +139,6 @@ def construct():
   g.connect_by_name( adk,            postroute_hold )
   g.connect_by_name( adk,            signoff        )
 
-  g.connect_by_name( dc_cmos65,      dc             )
   g.connect_by_name( rtl,            dc             )
   g.connect_by_name( constraints,    dc             )
 
@@ -168,7 +147,10 @@ def construct():
   g.connect_by_name( dc,             power          )
   g.connect_by_name( dc,             place          )
   g.connect_by_name( dc,             cts            )
-
+	
+  g.connect_by_name( innovus_caravel, iflow         )
+  g.connect_by_name( innovus_caravel, init         )
+  	
   g.connect_by_name( iflow,          init           )
   g.connect_by_name( iflow,          power          )
   g.connect_by_name( iflow,          place          )
@@ -188,13 +170,6 @@ def construct():
   g.connect_by_name( postroute,      postroute_hold )
   g.connect_by_name( postroute_hold, signoff        )
 
-  g.connect_by_name( adk,             vcs_gl_sim     )
-  g.connect_by_name( signoff,         vcs_gl_sim     )
-  g.connect_by_name( testbench,       vcs_gl_sim     )
-    
-  g.connect_by_name( adk,             gl_power_est   )
-  g.connect_by_name( signoff,         gl_power_est   )
-  g.connect_by_name( vcs_gl_sim,      gl_power_est   )
 
   #-----------------------------------------------------------------------
   # Parameterize

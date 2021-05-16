@@ -1,0 +1,39 @@
+#=========================================================================
+# Innovus node customizations for the caravel
+#=========================================================================
+
+name: innovus-customizations
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+
+outputs:
+  # Custom floorplan for the MWP
+  # must be used as input to cadence-innovus-init
+  # edit cadence-innovus-init order parameter to skip pin-assignment.tcl
+  #- floorplan.tcl
+  # Extend setup.tcl for the Innovus Foundation Flow generation
+  - setup.tcl
+  # DEF file for caravel user project wrapper projcts
+  - user_project_wrapper.def
+
+
+#-------------------------------------------------------------------------
+# Commands
+#------------------------------------------------------------------------- 
+parameters:
+  # overwrite script order parameter of innovus init step 
+  # remove floorplanning and pin assignment for now
+  iInit_order:
+    - main.tcl
+    - quality-of-life.tcl
+    - add-endcaps-welltaps.tcl
+    - make-path-groups.tcl
+    - reporting.tcl
+
+#-------------------------------------------------------------------------
+# Commands
+#------------------------------------------------------------------------- 
+
+
