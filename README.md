@@ -21,3 +21,9 @@ For now only the changes are listed:
 	- Copy more files from the open-pdk generated files
 	- Newly generated files for Synopsys and Cadence tools are copied into the PDK for reuse
 
+- main Makefile includes targets to build the design with mflowgen
+	- targets are generated from directory names in mflowgen/flows
+	- builds are done under mflowgen/build_*
+- Works now until Synthesis
+- PnR with Innovus started
+	- currently trying to use .def file as initial floorplan from https://github.com/lnis-uofu/SOFA

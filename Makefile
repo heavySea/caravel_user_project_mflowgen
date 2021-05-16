@@ -92,10 +92,14 @@ $(BUILD_BLOCKS): mflowgen-%: mflowgen/build_%
 		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
 		export MFLOWGEN_PATH=${SKY_ADK_PATH}; \
 		mflowgen run --design ${M_FLOWS}/${*}; \
-		make all; )
+		make; )
 
 mflowgen/build_%:
 	mkdir $@ 
+	cp mflowgen/flows/sourceme_mflowgen_env.sh $@
+	sed "s|export MFLOWGEN_ROOT=.*|export MFLOWGEN_ROOT=${MFLOWGEN_ROOT}|g" -i $@/sourceme_mflowgen_env.sh
+	sed "s|export MFLOWGEN_PATH=.*|export MFLOWGEN_PATH=${SKY_ADK_PATH}|g" -i $@/sourceme_mflowgen_env.sh
+	chmod a+x $@/sourceme_mflowgen_env.sh
 
 CLEAN_BLOCKS = $(foreach block, $(BLOCKS), clean-$(block))
 #.PHONY: clean_$(BLOCKS)
