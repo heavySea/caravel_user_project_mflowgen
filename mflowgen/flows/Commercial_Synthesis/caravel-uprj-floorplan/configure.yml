@@ -1,0 +1,27 @@
+#=========================================================================
+# Innovus node for the initial floorplan of the userproject wrapper
+#=========================================================================
+
+name: caravel-uprj-floorplan
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+
+outputs:
+  # DEF file for caravel user project wrapper projcts
+  - user_project_wrapper.def
+
+
+#-------------------------------------------------------------------------
+# Commands
+#------------------------------------------------------------------------- 
+commands:
+  # this script removes all power stripes and cell-pg connections,
+  # since this is handled by innovus
+  # it requires an input floorplan def file from the last
+  # generated def file of the floorplan stage of openlane
+  - python3 ./generate_init_def.py
+  # a result of the script can be found in this directory
+
+

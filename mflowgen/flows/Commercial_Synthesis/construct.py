@@ -88,6 +88,7 @@ def construct():
   #-----------------------------------------------------------------------
   
   innovus_caravel  = Step ( this_dir + '/innovus-customizations' )
+  caravel_upr_floorplan  = Step ( this_dir + '/caravel-uprj-floorplan' )
 
   #-----------------------------------------------------------------------
   # Manipulate nodes
@@ -99,6 +100,7 @@ def construct():
 
   # Add setup.tcl to inputs of iflow step and initial .def file to inputs of init step
   iflow.extend_inputs(['setup.tcl'])
+  iflow.extend_inputs(['user_project_wrapper.def'])
   init.extend_inputs(['user_project_wrapper.def'])
 
 	
@@ -110,6 +112,7 @@ def construct():
   g.add_step( constraints    )
   g.add_step( dc             )
   g.add_step( innovus_caravel)
+  g.add_step( caravel_upr_floorplan)
   g.add_step( iflow          )
   g.add_step( init           )
   g.add_step( power          )
@@ -150,6 +153,8 @@ def construct():
 	
   g.connect_by_name( innovus_caravel, iflow         )
   g.connect_by_name( innovus_caravel, init         )
+  g.connect_by_name( caravel_upr_floorplan, iflow         )
+  g.connect_by_name( caravel_upr_floorplan, init         )
   	
   g.connect_by_name( iflow,          init           )
   g.connect_by_name( iflow,          power          )

@@ -24,6 +24,8 @@ For now only the changes are listed:
 - main Makefile includes targets to build the design with mflowgen
 	- targets are generated from directory names in mflowgen/flows
 	- builds are done under mflowgen/build_*
-- Works now until Synthesis
-- PnR with Innovus started
-	- currently trying to use .def file as initial floorplan from https://github.com/lnis-uofu/SOFA
+- To ease macro placement and hierarchical designs the target designed should be hardened together with the wrapper
+	- this requires to follow the initial floorplan exactly
+- use the last generated .def file of the openlange floorplanning stage as initial def file in innovus
+	- automatically has the right die dimensions, io placement and power rings
+	- the mflowgen step "caravel_uprj_floorplan" provides a script to remove power/ground stripes and vias over the core area
