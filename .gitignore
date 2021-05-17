@@ -1,2 +1,3 @@
 checks/
 mflowgen/build*/
+*.pyc

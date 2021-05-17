@@ -15,8 +15,6 @@ outputs:
   #- floorplan.tcl
   # Extend setup.tcl for the Innovus Foundation Flow generation
   - setup.tcl
-  # DEF file for caravel user project wrapper projcts
-  - user_project_wrapper.def
 
 
 #-------------------------------------------------------------------------
