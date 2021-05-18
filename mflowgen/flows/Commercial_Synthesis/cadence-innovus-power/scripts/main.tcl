@@ -85,7 +85,8 @@ setAddStripeMode -reset
 setAddStripeMode -stacked_via_bottom_layer [expr $base_layer_idx + 1] \
                  -stacked_via_top_layer    $pmesh_top \
                  -break_at block_ring \
-                 -extend_to_closest_target stripe
+                 -extend_to_closest_target area_boundary
+
 
 
 # Add the stripes
@@ -102,7 +103,8 @@ addStripe -nets {vssd1 vccd1} -layer $pmesh_bot -direction vertical \
     -max_same_layer_jog_length $pmesh_bot_str_pitch             \
     -padcore_ring_bottom_layer_limit $pmesh_bot                 \
     -padcore_ring_top_layer_limit $pmesh_top                    \
-    -start [expr $pmesh_bot_str_pitch]
+    -start 0                          \
+    -area {-42.88 -37.52 2962.5 3557.2}
 
 
 #-------------------------------------------------------------------------
@@ -127,8 +129,8 @@ setViaGenMode -ignore_DRC false
 setAddStripeMode -reset
 setAddStripeMode -stacked_via_bottom_layer $pmesh_bot \
                  -stacked_via_top_layer    $pmesh_top \
-                 -break_at block_ring \
-                 -extend_to_closest_target ring
+                 -break_at block_ring\
+                 -extend_to_closest_target area_boundary
 
 # Add the stripes
 #
@@ -144,8 +146,9 @@ addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
     -max_same_layer_jog_length $pmesh_top_str_pitch               \
     -padcore_ring_bottom_layer_limit $pmesh_bot                   \
     -padcore_ring_top_layer_limit $pmesh_top                      \
-    -start [expr $pmesh_top_str_pitch] \
-    -extend_to first_padring
+    -start 0                          \
+    -area {-42.88 -37.52 2962.5 3557.2}
+
 
 #-------------------------------------------------------------------------
 # Stdcell power rail preroute
@@ -154,5 +157,6 @@ addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
 # Stdcell power rail preroute
 #-------------------------------------------------------------------------
 # Generate horizontal stdcell preroutes
-sroute -nets {vccd1 vssd1} -connect { blockPin corePin floatingStripe}
+sroute -nets {vccd1 vssd1} -connect { corePin floatingStripe}
 
+#floorPlan -b {-44.88 -37.52 2962.5 3557.2 0 0 2920 3520 5.52 10.88 2914.1 3508.8}
