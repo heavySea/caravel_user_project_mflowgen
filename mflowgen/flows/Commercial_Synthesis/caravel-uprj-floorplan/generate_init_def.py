@@ -1,3 +1,14 @@
+#=========================================================================
+# generate_init_def.py
+#=========================================================================
+# This script takes the last generated def file from the openlane
+# floorplan step and removes all stripes and vias accross the core area
+# as well as the power/ground cell connections
+#
+# Author : Maximilian Koschay
+# Date   : 17.05.2021
+
+
 from shutil import copyfile
 import re
 

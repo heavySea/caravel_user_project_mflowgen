@@ -73,7 +73,6 @@ def construct():
   dc             = Step( 'synopsys-dc-synthesis',                   default=True )
   iflow          = Step( 'cadence-innovus-flowsetup',       				default=True )
   init           = Step( 'cadence-innovus-init',                    default=True )
-  power          = Step( 'cadence-innovus-power',           				default=True )
   place          = Step( 'cadence-innovus-place',                   default=True )
   cts            = Step( 'cadence-innovus-cts',                     default=True )
   postcts_hold   = Step( 'cadence-innovus-postcts_hold',            default=True )
@@ -87,15 +86,19 @@ def construct():
   # Custom nodes
   #-----------------------------------------------------------------------
   
-  innovus_caravel  = Step ( this_dir + '/innovus-customizations' )
-  caravel_upr_floorplan  = Step ( this_dir + '/caravel-uprj-floorplan' )
+  caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
+  power                   = Step ( this_dir + '/cadence-innovus-power'  )
 
   #-----------------------------------------------------------------------
   # Manipulate nodes
   #-----------------------------------------------------------------------
 	
-  # remove floorplaning and pin assignment for now
-  init_order = innovus_caravel.get_param('iInit_order')
+  # since the initial floorplan including io locations and power rings is 
+  # already given by the initial def file, the floorplan script and
+  # io_placement step is skiped
+  # if you want to place macros during the floorplan step, define a new 
+  # floorplan.tcl script and give it the init step as input
+  init_order = caravel_upr_floorplan.get_param('iInit_order')
   init.update_params({'order' : init_order})
 
   # Add setup.tcl to inputs of iflow step and initial .def file to inputs of init step
@@ -111,7 +114,6 @@ def construct():
   g.add_step( rtl            )
   g.add_step( constraints    )
   g.add_step( dc             )
-  g.add_step( innovus_caravel)
   g.add_step( caravel_upr_floorplan)
   g.add_step( iflow          )
   g.add_step( init           )
@@ -151,8 +153,6 @@ def construct():
   g.connect_by_name( dc,             place          )
   g.connect_by_name( dc,             cts            )
 	
-  g.connect_by_name( innovus_caravel, iflow         )
-  g.connect_by_name( innovus_caravel, init         )
   g.connect_by_name( caravel_upr_floorplan, iflow         )
   g.connect_by_name( caravel_upr_floorplan, init         )
   	
