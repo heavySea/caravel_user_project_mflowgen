@@ -81,7 +81,13 @@ def construct():
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   signoff        = Step( 'cadence-innovus-signoff',                 default=True )
 
-    
+  magic_drc       = Step( 'open-magic-drc',                         default=True)
+  magic_def2spice = Step( 'open-magic-def2spice',                   default=True)
+  netgen_lvs      = Step( 'open-netgen-lvs',                        default=True)
+
+
+
+
   #-----------------------------------------------------------------------
   # Custom nodes
   #-----------------------------------------------------------------------
@@ -126,6 +132,10 @@ def construct():
   g.add_step( postroute_hold )
   g.add_step( signoff        )
 
+  g.add_step( magic_drc       )
+  g.add_step( magic_def2spice )
+  g.add_step( netgen_lvs      )
+
   #-----------------------------------------------------------------------
   # Graph -- Add edges
   #-----------------------------------------------------------------------
@@ -143,6 +153,9 @@ def construct():
   g.connect_by_name( adk,            postroute      )
   g.connect_by_name( adk,            postroute_hold )
   g.connect_by_name( adk,            signoff        )
+  g.connect_by_name( adk,            magic_drc      )
+  g.connect_by_name( adk,            magic_def2spice)
+  g.connect_by_name( adk,            netgen_lvs     )
 
   g.connect_by_name( rtl,            dc             )
   g.connect_by_name( constraints,    dc             )
@@ -153,8 +166,8 @@ def construct():
   g.connect_by_name( dc,             place          )
   g.connect_by_name( dc,             cts            )
 	
-  g.connect_by_name( caravel_upr_floorplan, iflow         )
-  g.connect_by_name( caravel_upr_floorplan, init         )
+  g.connect_by_name( caravel_upr_floorplan, iflow   )
+  g.connect_by_name( caravel_upr_floorplan, init    )
   	
   g.connect_by_name( iflow,          init           )
   g.connect_by_name( iflow,          power          )
@@ -174,6 +187,12 @@ def construct():
   g.connect_by_name( route,          postroute      )
   g.connect_by_name( postroute,      postroute_hold )
   g.connect_by_name( postroute_hold, signoff        )
+
+  g.connect_by_name( signoff,         magic_drc       )
+  g.connect_by_name( signoff,         magic_def2spice )
+  g.connect_by_name( signoff,         netgen_lvs      )
+  g.connect_by_name( magic_def2spice, netgen_lvs      )
+
 
 
   #-----------------------------------------------------------------------
