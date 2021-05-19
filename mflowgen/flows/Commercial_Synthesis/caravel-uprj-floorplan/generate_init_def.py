@@ -200,6 +200,97 @@ def remove_stripe_special_net(text):
             + r'((\s*NEW met4 3000 .*?\n)+))'
     return re.sub(find, remove_stripe_special_net_match, text)
 
+def replace_signal_io_location(matchobj):
+    metal_layer = matchobj.group(5)
+    #location of pin
+    xy_coordinate = [int(matchobj.group(3)), int(matchobj.group(4))]
+    # Also xy vectors, but interpreted as offsets from startpoint 'xy_coordinat'
+    rect_offset_start = [int(matchobj.group(6)), int(matchobj.group(7))]
+    rect_offset_end = [int(matchobj.group(8)), int(matchobj.group(9))]
+    
+    #print("(" + matchobj.group(1) + "\nCoordinate: (" + str(xy_coordinate) \
+    #        +"); Rect_offset_start: (" + str(rect_offset_start)\
+    #        + "); Rect_offset_end: (" + str(rect_offset_end) \
+    #        + "); layer: " + metal_layer)
+
+    orig_top_y_offset=3521200
+    orig_bottom_y_offset=-1200
+    orig_left_x_offset=-1200
+    orig_right_x_offset=2921200
+
+    # Top/Bottom or Left/Right?
+    if metal_layer=="met2":
+        #Top or Bottom?
+        if xy_coordinate[1]==orig_top_y_offset:
+            # remove pin offset
+            xy_coordinate[1]=3520000
+            # shorten on-die pin length (start y is negative!)
+            rect_offset_start[1]=rect_offset_start[1] + (orig_top_y_offset - 3520000)
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_end[1]=0
+        
+        elif xy_coordinate[1]==orig_bottom_y_offset:
+            # remove pin offset
+            xy_coordinate[1]=0
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_start[1]=0
+            # shorten on-die pin length (end y is positive!)
+            rect_offset_end[1]= rect_offset_end[1] + orig_bottom_y_offset
+
+        else:
+            raise ValueError("IO pin is not on expected offset of either " + str(orig_top_y_offset) \
+                + " or " +  str(orig_bottom_y_offset)+". It is at " + str(xy_coordinate[1]) + "!\n"
+                + "DEF file line:\n" + matchobj.group(1))
+
+    elif metal_layer=="met3":
+        #right or left?
+        if xy_coordinate[0]==orig_right_x_offset:
+            # remove pin offset
+            xy_coordinate[0]=2920000
+            # shorten on-die pin length (start x is negative!)
+            rect_offset_start[0]=rect_offset_start[0] + (orig_right_x_offset - 2920000)
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_end[0]=0
+        
+        elif xy_coordinate[0]==orig_left_x_offset:
+            # remove pin offset
+            xy_coordinate[0]=0
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_start[0]=0
+            # shorten on-die pin length (end y is positive!)
+            rect_offset_end[0]= rect_offset_end[0] + orig_left_x_offset
+
+        else:
+            raise ValueError("IO pin is not on expected offset of either " + str(orig_top_y_offset) \
+                + " or " +  str(orig_bottom_y_offset)+". It is at " + str(xy_coordinate[1]) + "!\n"
+                + "DEF file line:\n" + matchobj.group(1))
+    else:
+        raise ValueError("Not sure what kind of signal IO pin is on " + metal_layer + ". DEF file line:\n" + matchobj.group(1))
+
+    #generate replace line
+    replace = matchobj.group(2) \
+            + " + PLACED ( " + str(xy_coordinate[0]) + " " + str(xy_coordinate[1]) + " ) N" \
+            + " + LAYER " + metal_layer \
+            + " ( " + str(rect_offset_start[0]) + " " + str(rect_offset_start[1]) + " )" \
+            + " ( " + str(rect_offset_end[0]) + " " + str(rect_offset_end[1]) + " ) ;\n"
+    
+    #print("Original:    " + matchobj.group(1) + "\nReplacement: " + replace)
+
+    return replace
+
+def fix_signal_io_placement(text):
+    #- analog_io[0] + NET analog_io[0] + DIRECTION INOUT + USE SIGNAL + PLACED ( 2921200 1426980 ) N + LAYER met3 ( -3600 -600 ) ( 3600 600 ) ;
+    find    = r'\n((\s*- .+? \+ NET .+? \+ USE SIGNAL )' \
+            + r'\+ PLACED \( (\-?\w+) (\-?\w+) \) N' \
+            + r' \+ LAYER (\w+) \( (\-?\w+) (\-?\w+) \) \( (\-?\w+) (\-?\w+) \) \;)'
+    #print(re.findall(find, text))
+    return re.sub(find, replace_signal_io_location, text)
+
+def fix_floating_ROUTED(text):
+    find    = r'((      \+ ROUTED)\n\s*NEW (met\w .+?)\n)'
+    replace = r'\2 \3\n'
+    return re.sub(find, replace, text)
+
 # Remove all pg stripes over the core, but not the core ring
 pins_removed=0
 d_file, p_rm = remove_pgn_striped(d_file, 'vccd1')
@@ -235,6 +326,11 @@ d_file = remove_stripe_ring_vias(d_file)
 # remove all Stripe Special nets on metal 4 and metal 5
 d_file = remove_stripe_special_net(d_file)
 
+# Fix IO Pin placement to be on die edge and IO metal only on die
+d_file = fix_signal_io_placement(d_file)
+
+# Fix Floating ROUTED
+#d_file = fix_floating_ROUTED(d_file)
 
 with open('outputs/user_project_wrapper.def','w') as write_file:
     write_file.write(d_file)
