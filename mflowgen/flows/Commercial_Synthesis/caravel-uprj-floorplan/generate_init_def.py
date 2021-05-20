@@ -19,9 +19,6 @@ d_file = open('10-pdn.def', 'r').read()
 # Define some helper functions
 # Some are derived from https://github.com/google/skywater-pdk/pull/185
 
-stripe_no=0
-
-
 def find_highest_xy_match(matchobj, r_index):
     res_i=0
     i=0
@@ -46,6 +43,285 @@ def find_lowest_xy_match(matchobj, r_index):
 
     return res_i
 
+# remove out-of-die pgn rings and stripes accross the die, leaving only pins in the IO area
+def remove_pgn_stripes_and_ring(text, net_name):
+
+
+    # Find all vertical pg stripes
+    find    = r'(    - ' + net_name + r'(\.\w+)? \+ NET ' + net_name  + r' (\+ SPECIAL \+ .*?)' \
+            + r' \+ FIXED \( (\-*\w+) (\-*\w+) \) N' \
+            + r' \+ LAYER met4 \( \-?(\w+) \-?(\w+) \) \( \-?(\w+) \-?(\w+) \) \;\n)'
+    vert_stripes = re.findall(find, text)
+
+    # remember number of original pins
+    pin_count=len(vert_stripes)
+
+    # remove the stripes outside of the die area
+    vert_stripes.pop(find_highest_xy_match(vert_stripes, 3))
+    vert_stripes.pop(find_lowest_xy_match(vert_stripes, 3)) 
+
+    # Cut and shrink the stripes to leave only the minimal physical IO pins in the IO box
+    # Some definitions:
+    #   Stripe pin length (how far should it go inside the die area?)
+    stripe_pin_length='2400' # As long as the signal io pins
+    
+ 
+    # list for the new pins
+    new_vert_stripes = []
+    # also remember location and width, migth be usefull for stripe generation in innovus?
+    vert_stripe_positions_width = []
+
+    # stripe pin generation
+    stripe_no=1
+    for stripe in vert_stripes:
+        # get relevant positions from the original
+        # X position
+        x_pos = stripe[3]
+        # pin width
+        rect_start_x_offset = stripe[5]
+        rect_end_x_offset = stripe[7]
+        # Signal Information
+        signal_info = stripe[2]
+
+        # generate top pin
+        new_vert_stripes.append('    - ' + net_name + '.vert_t'+ str(stripe_no) \
+                                + ' + NET ' + net_name + ' ' +  signal_info \
+                                + ' + FIXED ( ' + x_pos + ' 3520000 ) N' \
+                                + ' + LAYER met4 ( -' + rect_start_x_offset + ' -' + stripe_pin_length +' )' \
+                                + ' ( ' + rect_end_x_offset + ' 0 ) ;\n') 
+
+        # generate bottom pin
+        new_vert_stripes.append('    - ' + net_name + '.vert_b'+ str(stripe_no) \
+                                + ' + NET ' + net_name + ' ' +  signal_info \
+                                + ' + FIXED ( ' + x_pos + ' 0 ) N' \
+                                + ' + LAYER met4 ( -' + rect_start_x_offset + ' 0 )' \
+                                + ' ( ' + rect_end_x_offset + ' ' + stripe_pin_length + ' ) ;\n') 
+
+        # save stripe position
+        vert_stripe_positions_width.append([x_pos, int(rect_start_x_offset) + int(rect_end_x_offset)])
+        stripe_no = stripe_no + 1
+
+
+    # do the same with the horizontal stripes
+    find    = r'(    - ' + net_name + r'(\.\w+)? \+ NET ' + net_name  + r' (\+ SPECIAL \+ .*?)' \
+            + r' \+ FIXED \( (\-*\w+) (\-*\w+) \) N' \
+            + r' \+ LAYER met5 \( \-?(\w+) \-?(\w+) \) \( \-?(\w+) \-?(\w+) \) \;\n)'
+    horizontal_stripes = re.findall(find, text)
+
+    # remember number of original pins
+    pin_count=pin_count + len(horizontal_stripes)
+
+    # remove the stripes outside of the die area
+    horizontal_stripes.pop(find_highest_xy_match(horizontal_stripes,4))
+    horizontal_stripes.pop(find_lowest_xy_match(horizontal_stripes,4))
+
+    new_horizontal_stripes = []
+    horizontal_stripe_positions_width = []
+
+    stripe_no=1
+    for stripe in horizontal_stripes:
+        # get relevant positions from the original
+        # Y position
+        y_pos = stripe[4]
+        # pin width
+        rect_start_y_offset = stripe[6]
+        rect_end_y_offset = stripe[8]
+        # Signal Information
+        signal_info = stripe[2]
+
+        # generate left pin
+        new_horizontal_stripes.append('    - ' + net_name + '.hori_l'+ str(stripe_no) \
+                                    + ' + NET ' + net_name + ' ' +  signal_info \
+                                    + ' + FIXED ( 0 ' + y_pos + ' ) N' \
+                                    + ' + LAYER met5 ( 0 -' + rect_start_y_offset + ' )' \
+                                    + ' ( ' + stripe_pin_length + ' ' + rect_end_y_offset + ' ) ;\n') 
+
+        # generate right pin
+        new_horizontal_stripes.append('    - ' + net_name + '.hori_r'+ str(stripe_no) \
+                                    + ' + NET ' + net_name + ' ' +  signal_info \
+                                    + ' + FIXED ( 2920000 ' + y_pos + ' ) N' \
+                                    + ' + LAYER met5 ( -'+ stripe_pin_length + ' -' + rect_start_y_offset + ' )' \
+                                    + ' ( 0 ' + rect_end_y_offset + ' ) ;\n') 
+
+
+        # save stripe position
+        horizontal_stripe_positions_width.append([y_pos ,int(rect_start_y_offset) + int(rect_end_y_offset)])
+        stripe_no = stripe_no + 1
+
+    # replace the whole pin definition block
+    replace=''
+    for stripe in new_vert_stripes:
+        replace = replace + stripe
+
+    for stripe in new_horizontal_stripes:
+        replace = replace + stripe
+
+    # find and replace the whole block
+    find    =   r'((    - ' + net_name + r' \+ NET .*? \+ LAYER met4 .*? ;\n)' \
+            +   r'(.|\n)*?' \
+            +   r'(    - ' + net_name + r'.\w+ .*? \+ LAYER met4 .*? ;\n    - ' + net_name + r'.\w+ .*? \+ LAYER met5 .*? ;\n)' \
+            +   r'(    - ' + net_name + r'.\w+ .*? \+ LAYER met5 .*? ;\n)*)' 
+
+    # migth be negativ!
+    pins_removed = pin_count - len(new_vert_stripes) + len(new_horizontal_stripes)
+
+    return (re.sub(find, replace, text), pins_removed, vert_stripe_positions_width, horizontal_stripe_positions_width)
+
+
+def edit_pin_count(text, removed_pins):
+    find    = r'PINS (\w+) ;\n'
+    origig_pin_count = int(re.findall(find, text)[0])
+    new_pin_count = origig_pin_count - removed_pins
+    return re.sub(find, ('PINS ' + str(new_pin_count) + ' ;\n\n'), text)
+
+def remove_special_nets(text):
+    find    = r'(SPECIALNETS \w+ ;\n(\n|.)*?\nEND SPECIALNETS\n)'
+    return re.sub(find, '\n', text)
+
+
+def replace_signal_io_location(matchobj):
+    metal_layer = matchobj.group(5)
+    #location of pin
+    xy_coordinate = [int(matchobj.group(3)), int(matchobj.group(4))]
+    # Also xy vectors, but interpreted as offsets from startpoint 'xy_coordinat'
+    rect_offset_start = [int(matchobj.group(6)), int(matchobj.group(7))]
+    rect_offset_end = [int(matchobj.group(8)), int(matchobj.group(9))]
+    
+    #print("(" + matchobj.group(1) + "\nCoordinate: (" + str(xy_coordinate) \
+    #        +"); Rect_offset_start: (" + str(rect_offset_start)\
+    #        + "); Rect_offset_end: (" + str(rect_offset_end) \
+    #        + "); layer: " + metal_layer)
+
+    orig_top_y_offset=3521200
+    orig_bottom_y_offset=-1200
+    orig_left_x_offset=-1200
+    orig_right_x_offset=2921200
+
+    # Top/Bottom or Left/Right?
+    if metal_layer=="met2":
+        #Top or Bottom?
+        if xy_coordinate[1]==orig_top_y_offset:
+            # remove pin offset
+            xy_coordinate[1]=3520000
+            # shorten on-die pin length (start y is negative!)
+            rect_offset_start[1]=rect_offset_start[1] + (orig_top_y_offset - 3520000)
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_end[1]=0
+        
+        elif xy_coordinate[1]==orig_bottom_y_offset:
+            # remove pin offset
+            xy_coordinate[1]=0
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_start[1]=0
+            # shorten on-die pin length (end y is positive!)
+            rect_offset_end[1]= rect_offset_end[1] + orig_bottom_y_offset
+
+        else:
+            raise ValueError("IO pin is not on expected offset of either " + str(orig_top_y_offset) \
+                + " or " +  str(orig_bottom_y_offset)+". It is at " + str(xy_coordinate[1]) + "!\n"
+                + "DEF file line:\n" + matchobj.group(1))
+
+    elif metal_layer=="met3":
+        #right or left?
+        if xy_coordinate[0]==orig_right_x_offset:
+            # remove pin offset
+            xy_coordinate[0]=2920000
+            # shorten on-die pin length (start x is negative!)
+            rect_offset_start[0]=rect_offset_start[0] + (orig_right_x_offset - 2920000)
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_end[0]=0
+        
+        elif xy_coordinate[0]==orig_left_x_offset:
+            # remove pin offset
+            xy_coordinate[0]=0
+            # remove off-die metal to avoid offDieMetal DRC violations
+            rect_offset_start[0]=0
+            # shorten on-die pin length (end y is positive!)
+            rect_offset_end[0]= rect_offset_end[0] + orig_left_x_offset
+
+        else:
+            raise ValueError("IO pin is not on expected offset of either " + str(orig_top_y_offset) \
+                + " or " +  str(orig_bottom_y_offset)+". It is at " + str(xy_coordinate[1]) + "!\n"
+                + "DEF file line:\n" + matchobj.group(1))
+    else:
+        raise ValueError("Not sure what kind of signal IO pin is on " + metal_layer + ". DEF file line:\n" + matchobj.group(1))
+
+    #generate replace line
+    replace = matchobj.group(2) \
+            + " + PLACED ( " + str(xy_coordinate[0]) + " " + str(xy_coordinate[1]) + " ) N" \
+            + " + LAYER " + metal_layer \
+            + " ( " + str(rect_offset_start[0]) + " " + str(rect_offset_start[1]) + " )" \
+            + " ( " + str(rect_offset_end[0]) + " " + str(rect_offset_end[1]) + " ) ;\n"
+    
+    #print("Original:    " + matchobj.group(1) + "\nReplacement: " + replace)
+
+    return replace
+
+def fix_signal_io_placement(text):
+    #- analog_io[0] + NET analog_io[0] + DIRECTION INOUT + USE SIGNAL + PLACED ( 2921200 1426980 ) N + LAYER met3 ( -3600 -600 ) ( 3600 600 ) ;
+    find    = r'\n((\s*- .+? \+ NET .+? \+ USE SIGNAL )' \
+            + r'\+ PLACED \( (\-?\w+) (\-?\w+) \) N' \
+            + r' \+ LAYER (\w+) \( (\-?\w+) (\-?\w+) \) \( (\-?\w+) (\-?\w+) \) \;)'
+    #print(re.findall(find, text))
+    return re.sub(find, replace_signal_io_location, text)
+
+
+d_file, p_rm, list1, list2 = remove_pgn_stripes_and_ring(d_file, 'vccd1')
+
+
+# Remove all pg stripes over the core, but not the core ring
+pins_removed=0
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vccd1')
+pins_removed = pins_removed + p_rm 
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vssd1')
+pins_removed = pins_removed + p_rm 
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vccd2')
+pins_removed = pins_removed + p_rm 
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vssd2')
+pins_removed = pins_removed + p_rm 
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vdda1')
+pins_removed = pins_removed + p_rm 
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vssa1')
+pins_removed = pins_removed + p_rm 
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vdda2')
+pins_removed = pins_removed + p_rm 
+d_file, p_rm, vert_stripes, horiz_stripes = remove_pgn_stripes_and_ring(d_file, 'vssa2')
+pins_removed = pins_removed + p_rm 
+
+# Since some Pins have been removed, the Pin count has to be changed as well
+d_file = edit_pin_count(d_file, pins_removed)
+
+# Remove SPECIAL NETS
+d_file = remove_special_nets(d_file)
+
+# # Fix IO Pin placement to be on die edge and IO metal only on die
+d_file = fix_signal_io_placement(d_file)
+
+
+
+with open('outputs/user_project_wrapper.def','w') as write_file:
+    write_file.write(d_file)
+
+
+
+
+
+#=========================================================================
+# Deprecated functions and edits
+#=========================================================================
+# The below edits remove the wohle stripes accross the die area and only
+# leave the rings outside of the die
+# this brings the problem, that innovus will complay about metal out of
+# the die area
+# Moreover the positions of the stripes are fixed! So we need to have at
+# least have some metal of the stripes as special net inputs!
+# With the code this is not fullfilled, since the complete stripes are
+# removed 
+
+
+
+# Functions:
+
 def remove_pgn_striped(text, net_name):
     find    = r'(    - ' + net_name + r'(\s|.\w+).*?\+ FIXED \( (\-*\w+) (\-*\w+) \) N \+ LAYER met4 .*? ;\n)'
     vert_stripes = re.findall(find, text)
@@ -69,11 +345,6 @@ def remove_pgn_striped(text, net_name):
 
     return (re.sub(find, replace, text), pins_removed)
 
-def edit_pin_count(text, removed_pins):
-    find    = r'PINS (\w+) ;\n'
-    origig_pin_count = int(re.findall(find, text)[0])
-    new_pin_count = origig_pin_count - removed_pins
-    return re.sub(find, ('PINS ' + str(new_pin_count) + ' ;\n'), text)
 
 def remove_m1_follow_pins(text):
     find    = r'(      NEW met1 480 \+ SHAPE FOLLOWPIN .*?\)\n)'
@@ -200,190 +471,48 @@ def remove_stripe_special_net(text):
             + r'((\s*NEW met4 3000 .*?\n)+))'
     return re.sub(find, remove_stripe_special_net_match, text)
 
-def replace_signal_io_location(matchobj):
-    metal_layer = matchobj.group(5)
-    #location of pin
-    xy_coordinate = [int(matchobj.group(3)), int(matchobj.group(4))]
-    # Also xy vectors, but interpreted as offsets from startpoint 'xy_coordinat'
-    rect_offset_start = [int(matchobj.group(6)), int(matchobj.group(7))]
-    rect_offset_end = [int(matchobj.group(8)), int(matchobj.group(9))]
-    
-    #print("(" + matchobj.group(1) + "\nCoordinate: (" + str(xy_coordinate) \
-    #        +"); Rect_offset_start: (" + str(rect_offset_start)\
-    #        + "); Rect_offset_end: (" + str(rect_offset_end) \
-    #        + "); layer: " + metal_layer)
-
-    orig_top_y_offset=3521200
-    orig_bottom_y_offset=-1200
-    orig_left_x_offset=-1200
-    orig_right_x_offset=2921200
-
-    # Top/Bottom or Left/Right?
-    if metal_layer=="met2":
-        #Top or Bottom?
-        if xy_coordinate[1]==orig_top_y_offset:
-            # remove pin offset
-            xy_coordinate[1]=3520000
-            # shorten on-die pin length (start y is negative!)
-            rect_offset_start[1]=rect_offset_start[1] + (orig_top_y_offset - 3520000)
-            # remove off-die metal to avoid offDieMetal DRC violations
-            rect_offset_end[1]=0
-        
-        elif xy_coordinate[1]==orig_bottom_y_offset:
-            # remove pin offset
-            xy_coordinate[1]=0
-            # remove off-die metal to avoid offDieMetal DRC violations
-            rect_offset_start[1]=0
-            # shorten on-die pin length (end y is positive!)
-            rect_offset_end[1]= rect_offset_end[1] + orig_bottom_y_offset
-
-        else:
-            raise ValueError("IO pin is not on expected offset of either " + str(orig_top_y_offset) \
-                + " or " +  str(orig_bottom_y_offset)+". It is at " + str(xy_coordinate[1]) + "!\n"
-                + "DEF file line:\n" + matchobj.group(1))
-
-    elif metal_layer=="met3":
-        #right or left?
-        if xy_coordinate[0]==orig_right_x_offset:
-            # remove pin offset
-            xy_coordinate[0]=2920000
-            # shorten on-die pin length (start x is negative!)
-            rect_offset_start[0]=rect_offset_start[0] + (orig_right_x_offset - 2920000)
-            # remove off-die metal to avoid offDieMetal DRC violations
-            rect_offset_end[0]=0
-        
-        elif xy_coordinate[0]==orig_left_x_offset:
-            # remove pin offset
-            xy_coordinate[0]=0
-            # remove off-die metal to avoid offDieMetal DRC violations
-            rect_offset_start[0]=0
-            # shorten on-die pin length (end y is positive!)
-            rect_offset_end[0]= rect_offset_end[0] + orig_left_x_offset
-
-        else:
-            raise ValueError("IO pin is not on expected offset of either " + str(orig_top_y_offset) \
-                + " or " +  str(orig_bottom_y_offset)+". It is at " + str(xy_coordinate[1]) + "!\n"
-                + "DEF file line:\n" + matchobj.group(1))
-    else:
-        raise ValueError("Not sure what kind of signal IO pin is on " + metal_layer + ". DEF file line:\n" + matchobj.group(1))
-
-    #generate replace line
-    replace = matchobj.group(2) \
-            + " + PLACED ( " + str(xy_coordinate[0]) + " " + str(xy_coordinate[1]) + " ) N" \
-            + " + LAYER " + metal_layer \
-            + " ( " + str(rect_offset_start[0]) + " " + str(rect_offset_start[1]) + " )" \
-            + " ( " + str(rect_offset_end[0]) + " " + str(rect_offset_end[1]) + " ) ;\n"
-    
-    #print("Original:    " + matchobj.group(1) + "\nReplacement: " + replace)
-
-    return replace
-
-def fix_signal_io_placement(text):
-    #- analog_io[0] + NET analog_io[0] + DIRECTION INOUT + USE SIGNAL + PLACED ( 2921200 1426980 ) N + LAYER met3 ( -3600 -600 ) ( 3600 600 ) ;
-    find    = r'\n((\s*- .+? \+ NET .+? \+ USE SIGNAL )' \
-            + r'\+ PLACED \( (\-?\w+) (\-?\w+) \) N' \
-            + r' \+ LAYER (\w+) \( (\-?\w+) (\-?\w+) \) \( (\-?\w+) (\-?\w+) \) \;)'
-    #print(re.findall(find, text))
-    return re.sub(find, replace_signal_io_location, text)
-
 def fix_floating_ROUTED(text):
     find    = r'((      \+ ROUTED)\n\s*NEW (met\w .+?)\n)'
     replace = r'\2 \3\n'
     return re.sub(find, replace, text)
 
-# Remove all pg stripes over the core, but not the core ring
-pins_removed=0
-d_file, p_rm = remove_pgn_striped(d_file, 'vccd1')
-pins_removed = pins_removed + p_rm 
-d_file, p_rm = remove_pgn_striped(d_file, 'vssd1')
-pins_removed = pins_removed + p_rm 
-d_file, p_rm = remove_pgn_striped(d_file, 'vccd2')
-pins_removed = pins_removed + p_rm 
-d_file, p_rm = remove_pgn_striped(d_file, 'vssd2')
-pins_removed = pins_removed + p_rm 
-d_file, p_rm = remove_pgn_striped(d_file, 'vdda1')
-pins_removed = pins_removed + p_rm 
-d_file, p_rm = remove_pgn_striped(d_file, 'vssa1')
-pins_removed = pins_removed + p_rm 
-d_file, p_rm = remove_pgn_striped(d_file, 'vdda2')
-pins_removed = pins_removed + p_rm 
-d_file, p_rm = remove_pgn_striped(d_file, 'vssa2')
-pins_removed = pins_removed + p_rm 
+# Executed steps
 
-# Since some Pins have been removed, the Pin count has to be changed as well
-d_file = edit_pin_count(d_file, pins_removed)
+
+# # Remove all pg stripes over the core, but not the core ring
+# pins_removed=0
+# d_file, p_rm = remove_pgn_striped(d_file, 'vccd1')
+# pins_removed = pins_removed + p_rm 
+# d_file, p_rm = remove_pgn_striped(d_file, 'vssd1')
+# pins_removed = pins_removed + p_rm 
+# d_file, p_rm = remove_pgn_striped(d_file, 'vccd2')
+# pins_removed = pins_removed + p_rm 
+# d_file, p_rm = remove_pgn_striped(d_file, 'vssd2')
+# pins_removed = pins_removed + p_rm 
+# d_file, p_rm = remove_pgn_striped(d_file, 'vdda1')
+# pins_removed = pins_removed + p_rm 
+# d_file, p_rm = remove_pgn_striped(d_file, 'vssa1')
+# pins_removed = pins_removed + p_rm 
+# d_file, p_rm = remove_pgn_striped(d_file, 'vdda2')
+# pins_removed = pins_removed + p_rm 
+# d_file, p_rm = remove_pgn_striped(d_file, 'vssa2')
+# pins_removed = pins_removed + p_rm 
+
+
+
+
+# # remove stripe via connections with cell pg stripes
+# # all contained on met 3,2 and 1
+# d_file = remove_m3_m2_m1_vias(d_file)
+
+# # remove all Stripe-Ring vias
+# d_file = remove_stripe_ring_vias(d_file)
+
+# # remove all Stripe Special nets on metal 4 and metal 5
+# d_file = remove_stripe_special_net(d_file)
+
+# # Fix Floating ROUTED
+# #d_file = fix_floating_ROUTED(d_file)
 
 # Remove all pg_cell connection stripes 
-d_file = remove_m1_follow_pins(d_file)
-
-# remove stripe via connections with cell pg stripes
-# all contained on met 3,2 and 1
-d_file = remove_m3_m2_m1_vias(d_file)
-
-# remove all Stripe-Ring vias
-d_file = remove_stripe_ring_vias(d_file)
-
-# remove all Stripe Special nets on metal 4 and metal 5
-d_file = remove_stripe_special_net(d_file)
-
-# Fix IO Pin placement to be on die edge and IO metal only on die
-d_file = fix_signal_io_placement(d_file)
-
-# Fix Floating ROUTED
-#d_file = fix_floating_ROUTED(d_file)
-
-with open('outputs/user_project_wrapper.def','w') as write_file:
-    write_file.write(d_file)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def fix_related_pin_for_pg_pin(text, pg_pin, related_pin, new_pin):
-    find    = r'(pg_pin \(\"' + pg_pin + r'\"\) \{\s*\n(.|\n)*?\s+' + related_pin + r' : \")\w+(\";)\n'
-    replace = r'\1' + new_pin + r'\3' + '\n'
-    return re.sub(find, replace, text)
-
-def fix_related_pin_for_pin(text, pg_pin, related_pin, new_pin):
-    find    = r'(pin \(\"' + pg_pin + r'\"\) \{\s*\n(\s*\w+ : \"\w+";\n){1,4}\s+' + related_pin + r' : \")\w+(\";)\n'
-    replace = r'\1' + new_pin + r'\3' + '\n'
-    return re.sub(find, replace, text)
-
-def fix_missing_pg_pin(text, cell_name, pg_pin, attributes, insert_after_pg_pin=None):
-    find    = r'(cell \(\"' + cell_name + r'.*\"\) \{\s*\n)'
-    if insert_after_pg_pin != None:
-        find    = find + r'(((.|\n)*?)(\n(\s*)pg_pin \(\"' + insert_after_pg_pin + r'\"\) \{\s*\n(.|\n)*?\n\s*\}))'
-        replace = r'\1\2\n\6'
-        tab = r'\6'
-    else:
-        find    = find + r'(\s*)'
-        replace = r'\1\2\n'
-        tab = r'\2'
-
-    replace = replace + 'pg_pin ("' + pg_pin + '") {\n'
-
-    for attr_key, attr_value in attributes.items():
-        replace = replace + tab + '    ' + attr_key + ' : "' + attr_value + '";\n'
-
-    replace = replace + tab + '}'
-
-    return re.sub(find, replace, text)
-
-    #find    = r'(pin \(\"' + pg_pin + r'\"\) \{\s*\n(\s*\w+ : \"\w+";\n){1,4}\s+' + related_pin + r' : \")\w+(\";)\n'
-    #replace = r'\1' + new_pin + r'\3' + '\n'
-    #return re.sub(find, replace, text, re.DOTALL)
+# d_file = remove_m1_follow_pins(d_file)
