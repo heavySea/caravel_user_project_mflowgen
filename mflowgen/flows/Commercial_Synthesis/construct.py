@@ -83,10 +83,6 @@ def construct():
 
   magic_drc       = Step( 'open-magic-drc',                         default=True)
   magic_def2spice = Step( 'open-magic-def2spice',                   default=True)
-  netgen_lvs      = Step( 'open-netgen-lvs',                        default=True)
-
-
-
 
   #-----------------------------------------------------------------------
   # Custom nodes
@@ -94,6 +90,8 @@ def construct():
   
   caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
   power                   = Step ( this_dir + '/cadence-innovus-power'  )
+  # use custom lvs node that include verilg to spice conversion
+  netgen_lvs              = Step( this_dir +  '/open-netgen-lvs'         )
 
   #-----------------------------------------------------------------------
   # Manipulate nodes
@@ -110,7 +108,7 @@ def construct():
   # Add setup.tcl to inputs of iflow step and initial .def file to inputs of init step
   iflow.extend_inputs(['setup.tcl'])
   iflow.extend_inputs(['user_project_wrapper.def'])
-  init.extend_inputs(['user_project_wrapper.def'])
+  init.extend_inputs(['user_project_wrapper.def', 'floorplan.tcl'])
 
 	
   #-----------------------------------------------------------------------
