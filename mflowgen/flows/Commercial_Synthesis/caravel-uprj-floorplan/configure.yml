@@ -16,6 +16,7 @@ outputs:
   # the setup.tcl can be extened by an additional setup.tcl at the input 
   # of the cadence-innovus-flowsetup step
   - setup.tcl
+  # A floorplan script, e.g. to set placement guides and macro placement
 
 #-------------------------------------------------------------------------
 # Commands
@@ -38,6 +39,7 @@ parameters:
   iInit_order:
     - main.tcl
     - quality-of-life.tcl
+    - floorplan.tcl
     - add-endcaps-welltaps.tcl
     - make-path-groups.tcl
     - reporting.tcl
