@@ -84,27 +84,16 @@ setViaGenMode -ignore_DRC false
 setAddStripeMode -reset
 setAddStripeMode -stacked_via_bottom_layer [expr $base_layer_idx + 1] \
                  -stacked_via_top_layer    $pmesh_top \
-                 -break_at block_ring \
-                 -extend_to_closest_target area_boundary
-
+                 -break_at block_ring
 
 
 # Add the stripes
-#
-# Use -start to offset the stripes slightly away from the core edge.
-# Allow same-layer jogs to connect stripes to the core ring if some
-# blockage is in the way (e.g., connections from core ring to pads).
-# Restrict any routing around blockages to use only layers for power.
+# Use physical pin locations for stripes
+
 
 addStripe -nets {vssd1 vccd1} -layer $pmesh_bot -direction vertical \
-    -width $pmesh_bot_str_width                                 \
-    -spacing $pmesh_bot_str_intraset_spacing                    \
-    -set_to_set_distance $pmesh_bot_str_interset_pitch          \
-    -max_same_layer_jog_length $pmesh_bot_str_pitch             \
-    -padcore_ring_bottom_layer_limit $pmesh_bot                 \
-    -padcore_ring_top_layer_limit $pmesh_top                    \
-    -start 0                          \
-    -area {-42.88 -37.52 2962.5 3557.2}
+    -over_physical_pins 1 -pin_layer $pmesh_bot \
+    -width pin_width
 
 
 #-------------------------------------------------------------------------
@@ -129,8 +118,7 @@ setViaGenMode -ignore_DRC false
 setAddStripeMode -reset
 setAddStripeMode -stacked_via_bottom_layer $pmesh_bot \
                  -stacked_via_top_layer    $pmesh_top \
-                 -break_at block_ring\
-                 -extend_to_closest_target area_boundary
+                 -break_at block_ring
 
 # Add the stripes
 #
@@ -140,14 +128,8 @@ setAddStripeMode -stacked_via_bottom_layer $pmesh_bot \
 # Restrict any routing around blockages to use only layers for power.
 
 addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
-    -width $pmesh_top_str_width                                   \
-    -spacing $pmesh_top_str_intraset_spacing                      \
-    -set_to_set_distance $pmesh_top_str_interset_pitch            \
-    -max_same_layer_jog_length $pmesh_top_str_pitch               \
-    -padcore_ring_bottom_layer_limit $pmesh_bot                   \
-    -padcore_ring_top_layer_limit $pmesh_top                      \
-    -start 0                          \
-    -area {-42.88 -37.52 2962.5 3557.2}
+    -over_physical_pins 1 -pin_layer $pmesh_top \
+    -width pin_width
 
 
 #-------------------------------------------------------------------------
