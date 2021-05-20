@@ -73,7 +73,6 @@ def construct():
   dc             = Step( 'synopsys-dc-synthesis',                   default=True )
   iflow          = Step( 'cadence-innovus-flowsetup',       				default=True )
   init           = Step( 'cadence-innovus-init',                    default=True )
-  power          = Step( 'cadence-innovus-power',           				default=True )
   place          = Step( 'cadence-innovus-place',                   default=True )
   cts            = Step( 'cadence-innovus-cts',                     default=True )
   postcts_hold   = Step( 'cadence-innovus-postcts_hold',            default=True )
@@ -82,20 +81,30 @@ def construct():
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   signoff        = Step( 'cadence-innovus-signoff',                 default=True )
 
-    
+  magic_drc       = Step( 'open-magic-drc',                         default=True)
+  magic_def2spice = Step( 'open-magic-def2spice',                   default=True)
+  netgen_lvs      = Step( 'open-netgen-lvs',                        default=True)
+
+
+
+
   #-----------------------------------------------------------------------
   # Custom nodes
   #-----------------------------------------------------------------------
   
-  innovus_caravel  = Step ( this_dir + '/innovus-customizations' )
-  caravel_upr_floorplan  = Step ( this_dir + '/caravel-uprj-floorplan' )
+  caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
+  power                   = Step ( this_dir + '/cadence-innovus-power'  )
 
   #-----------------------------------------------------------------------
   # Manipulate nodes
   #-----------------------------------------------------------------------
 	
-  # remove floorplaning and pin assignment for now
-  init_order = innovus_caravel.get_param('iInit_order')
+  # since the initial floorplan including io locations and power rings is 
+  # already given by the initial def file, the floorplan script and
+  # io_placement step is skiped
+  # if you want to place macros during the floorplan step, define a new 
+  # floorplan.tcl script and give it the init step as input
+  init_order = caravel_upr_floorplan.get_param('iInit_order')
   init.update_params({'order' : init_order})
 
   # Add setup.tcl to inputs of iflow step and initial .def file to inputs of init step
@@ -111,7 +120,6 @@ def construct():
   g.add_step( rtl            )
   g.add_step( constraints    )
   g.add_step( dc             )
-  g.add_step( innovus_caravel)
   g.add_step( caravel_upr_floorplan)
   g.add_step( iflow          )
   g.add_step( init           )
@@ -123,6 +131,10 @@ def construct():
   g.add_step( postroute      )
   g.add_step( postroute_hold )
   g.add_step( signoff        )
+
+  g.add_step( magic_drc       )
+  g.add_step( magic_def2spice )
+  g.add_step( netgen_lvs      )
 
   #-----------------------------------------------------------------------
   # Graph -- Add edges
@@ -141,6 +153,9 @@ def construct():
   g.connect_by_name( adk,            postroute      )
   g.connect_by_name( adk,            postroute_hold )
   g.connect_by_name( adk,            signoff        )
+  g.connect_by_name( adk,            magic_drc      )
+  g.connect_by_name( adk,            magic_def2spice)
+  g.connect_by_name( adk,            netgen_lvs     )
 
   g.connect_by_name( rtl,            dc             )
   g.connect_by_name( constraints,    dc             )
@@ -151,10 +166,8 @@ def construct():
   g.connect_by_name( dc,             place          )
   g.connect_by_name( dc,             cts            )
 	
-  g.connect_by_name( innovus_caravel, iflow         )
-  g.connect_by_name( innovus_caravel, init         )
-  g.connect_by_name( caravel_upr_floorplan, iflow         )
-  g.connect_by_name( caravel_upr_floorplan, init         )
+  g.connect_by_name( caravel_upr_floorplan, iflow   )
+  g.connect_by_name( caravel_upr_floorplan, init    )
   	
   g.connect_by_name( iflow,          init           )
   g.connect_by_name( iflow,          power          )
@@ -174,6 +187,12 @@ def construct():
   g.connect_by_name( route,          postroute      )
   g.connect_by_name( postroute,      postroute_hold )
   g.connect_by_name( postroute_hold, signoff        )
+
+  g.connect_by_name( signoff,         magic_drc       )
+  g.connect_by_name( signoff,         magic_def2spice )
+  g.connect_by_name( signoff,         netgen_lvs      )
+  g.connect_by_name( magic_def2spice, netgen_lvs      )
+
 
 
   #-----------------------------------------------------------------------
