@@ -1,9 +1,9 @@
 [submodule "caravel-lite"]
 	path = caravel
 	url = https://github.com/efabless/caravel-lite
-[submodule "mflowgen"]
-	path = mflowgen/mflowgen
-	url = https://github.com/mflowgen/mflowgen
 [submodule "SKY130_ADK"]
 	path = mflowgen/SKY130_ADK
 	url = https://github.com/heavySea/skywater-130nm-adk
+[submodule "mflowgen"]
+	path = mflowgen/mflowgen
+	url = git@gitlab.amd.e-technik.uni-rostock.de:maximilian.koschay/mflowgen.git
