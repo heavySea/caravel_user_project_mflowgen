@@ -1,0 +1,33 @@
+#=========================================================================
+# Verilog 2 Spice netlist conversion for LVS using Synopsys HSIM v2s utility
+#=========================================================================
+# Generates a spice model for LVS using verilog netlist and spice models
+# from ADK using the v2s utility from Synopsys HSIM
+# Author : Maximilian Koschay
+# Date   : 25.05.2021
+#
+
+name: synopsys-hsim-verilog2spice
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+inputs:
+  - adk
+  - design.lvs.v
+
+outputs:
+  - design.lvs.spice
+
+#-------------------------------------------------------------------------
+# Parameters
+#-------------------------------------------------------------------------
+
+parameters:
+  design_name: undefined
+
+commands: 
+  - v2s inputs/design.lvs.v -s inputs/adk/stdcells.spi -o outputs/design.lvs.spice -top $design_name
+  
+preconditions:
+  - assert Tool('v2s')
