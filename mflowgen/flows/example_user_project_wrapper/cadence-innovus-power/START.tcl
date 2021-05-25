@@ -28,12 +28,8 @@
 # Setup
 #-------------------------------------------------------------------------
 # Restore from checkpoint and set up variables
-echo "TEST1"
 source innovus-foundation-flow/custom-scripts/restore-design.tcl
-echo "TEST2"
 source innovus-foundation-flow/custom-scripts/setup-session.tcl
-echo "TEST3"
-
 #-------------------------------------------------------------------------
 # Execute
 #-------------------------------------------------------------------------

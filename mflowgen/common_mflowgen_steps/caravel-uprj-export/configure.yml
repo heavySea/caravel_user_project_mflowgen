@@ -1,0 +1,27 @@
+#=========================================================================
+# Export step to copy all implementation result to the MWP directory structure
+#=========================================================================
+# Author : Maximilian Koschay
+#
+
+name: caravel-uprj-export
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+
+inputs:
+  # All inputs from Innovus Signoff step
+  - design.def.gz
+  - design.gds.gz
+  - design.lef
+  - design.lvs.spice
+  - design.vcs.pg.v
+
+
+#-------------------------------------------------------------------------
+# Commands
+#-------------------------------------------------------------------------
+
+commands:
+  - ./export-results.sh

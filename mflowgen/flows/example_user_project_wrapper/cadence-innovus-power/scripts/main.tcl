@@ -1,38 +1,59 @@
 #=========================================================================
-# power-strategy-singlemesh.tcl
+# main.tcl
 #=========================================================================
-# This script implements a single power mesh on the upper metal layers.
-# Note that M2 is expected to be vertical, and the lower metal layer of
-# the power mesh is expected to be horizontal.
+# A power strategy for the efabless MWP caravell user project wrapper 
 #
-# Author : Christopher Torng
-# Date   : January 20, 2019
+# Author : Maximilian Koschay
+# Date   : 18.05.2021
 
-#-------------------------------------------------------------------------
-# Stdcell power rail preroute
-#-------------------------------------------------------------------------
-# Generate horizontal stdcell preroutes
+# The initial floorplan already provides power rings around the core area
+# which must not be changed!
+# the original pg stripes and cell connections over the core area have been
+# removed to allow easier macro placement
 
-sroute -nets {VDD VSS}
+# The example project is quite simple.
+# It only uses one of the two available digital power supplies and no
+# analog power supply. It does not contain any macro or special cells. 
+
 
 #-------------------------------------------------------------------------
 # Shorter names from the ADK
 #-------------------------------------------------------------------------
 
+if {[info exists ADK_BASE_LAYER_IDX]} {
+  set base_layer_idx $ADK_BASE_LAYER_IDX
+} else {
+  set base_layer_idx 0
+}
+
 set pmesh_bot $ADK_POWER_MESH_BOT_LAYER
 set pmesh_top $ADK_POWER_MESH_TOP_LAYER
 
 #-------------------------------------------------------------------------
-# Power ring
+# Ring width calculation was skipped in the init step
 #-------------------------------------------------------------------------
 
-addRing -nets {VDD VSS} -type core_rings -follow core   \
-        -layer [list top  $pmesh_top bottom $pmesh_top  \
-                     left $pmesh_bot right  $pmesh_bot] \
-        -width $savedvars(p_ring_width)                 \
-        -spacing $savedvars(p_ring_spacing)             \
-        -offset $savedvars(p_ring_spacing)              \
-        -extend_corner {tl tr bl br lt lb rt rb}
+set M5_min_width   [dbGet [dbGetLayerByName met5].minWidth]
+set M5_min_spacing [dbGet [dbGetLayerByZ met5].minSpacing]
+
+set savedvars(p_ring_width)   [expr 20 * $M5_min_width];   # Arbitrary!
+set savedvars(p_ring_spacing) [expr 24 * $M5_min_spacing]; # Arbitrary!
+
+#-------------------------------------------------------------------------
+# Macro Power rings
+#-------------------------------------------------------------------------
+# If you need to add rings accross macros do it here
+#selectInst $macro
+#addRing -nets {vccd1 vssd1} -type block_rings \
+#        -around selected \
+#        -layer [list top  $pmesh_top bottom $pmesh_top  \
+#                     left $pmesh_bot right  $pmesh_bot] \
+#        -width $savedvars(p_ring_width)                 \
+#        -spacing $savedvars(p_ring_spacing)             \
+#        -offset $savedvars(p_ring_spacing)    \
+#        -extend_corner {lt rt tl bl }
+#deselectAll
+
 
 #-------------------------------------------------------------------------
 # Power mesh bottom settings (vertical)
@@ -62,23 +83,18 @@ setViaGenMode -ignore_DRC false
 
 setAddStripeMode -reset
 setAddStripeMode -stacked_via_bottom_layer [expr $base_layer_idx + 1] \
-                 -stacked_via_top_layer    $pmesh_top
+                 -stacked_via_top_layer    $pmesh_top \
+                 -break_at block_ring
+
 
 # Add the stripes
-#
-# Use -start to offset the stripes slightly away from the core edge.
-# Allow same-layer jogs to connect stripes to the core ring if some
-# blockage is in the way (e.g., connections from core ring to pads).
-# Restrict any routing around blockages to use only layers for power.
+# Use physical pin locations for stripes
 
-addStripe -nets {VSS VDD} -layer $pmesh_bot -direction vertical \
-    -width $pmesh_bot_str_width                                 \
-    -spacing $pmesh_bot_str_intraset_spacing                    \
-    -set_to_set_distance $pmesh_bot_str_interset_pitch          \
-    -max_same_layer_jog_length $pmesh_bot_str_pitch             \
-    -padcore_ring_bottom_layer_limit $pmesh_bot                 \
-    -padcore_ring_top_layer_limit $pmesh_top                    \
-    -start [expr $pmesh_bot_str_pitch]
+
+addStripe -nets {vssd1 vccd1} -layer $pmesh_bot -direction vertical \
+    -over_physical_pins 1 -pin_layer $pmesh_bot \
+    -width pin_width
+
 
 #-------------------------------------------------------------------------
 # Power mesh top settings (horizontal)
@@ -101,7 +117,8 @@ setViaGenMode -ignore_DRC false
 
 setAddStripeMode -reset
 setAddStripeMode -stacked_via_bottom_layer $pmesh_bot \
-                 -stacked_via_top_layer    $pmesh_top
+                 -stacked_via_top_layer    $pmesh_top \
+                 -break_at block_ring
 
 # Add the stripes
 #
@@ -110,13 +127,12 @@ setAddStripeMode -stacked_via_bottom_layer $pmesh_bot \
 # blockage is in the way (e.g., connections from core ring to pads).
 # Restrict any routing around blockages to use only layers for power.
 
-addStripe -nets {VSS VDD} -layer $pmesh_top -direction horizontal \
-    -width $pmesh_top_str_width                                   \
-    -spacing $pmesh_top_str_intraset_spacing                      \
-    -set_to_set_distance $pmesh_top_str_interset_pitch            \
-    -max_same_layer_jog_length $pmesh_top_str_pitch               \
-    -padcore_ring_bottom_layer_limit $pmesh_bot                   \
-    -padcore_ring_top_layer_limit $pmesh_top                      \
-    -start [expr $pmesh_top_str_pitch]
+addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
+    -over_physical_pins 1 -pin_layer $pmesh_top \
+    -width pin_width
 
-
+#-------------------------------------------------------------------------
+# Stdcell power rail preroute
+#-------------------------------------------------------------------------
+# Generate horizontal stdcell preroutes
+sroute -nets {vccd1 vssd1} -connect { corePin floatingStripe}

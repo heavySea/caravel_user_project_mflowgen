@@ -4,7 +4,6 @@
 # ASIC flow using commercial EDA tools:
 # Synopsys DC for synthesis
 # Cadence Innovus for Place and Route
-# Mentor Modelsim for Simulation (Replaceable with VCS)
 # Synopsys PrimeTime (+ PX / Power Compiler) for Timing Sign-Off
 # Magic for DRC 
 # LVS with netgen
@@ -50,7 +49,11 @@ def construct():
   # Create nodes
   #-----------------------------------------------------------------------
 
-  this_dir = os.path.dirname( os.path.abspath( __file__ ) )
+  this_dir            = os.path.dirname( os.path.abspath( __file__ ) )
+  common_SKY130_steps = os.path.dirname( os.path.abspath( __file__ ) ) + '/../../common_mflowgen_steps'
+  print(common_SKY130_steps)
+  # Using an enviroment variable would be better:
+  #common_SKY130_steps = os.env('MFLOWGEN_STEP_PATH')
 
   #-----------------------------------------------------------------------
   # ADK node
@@ -63,7 +66,7 @@ def construct():
   # Design node
   #-----------------------------------------------------------------------
 
-  rtl            = Step( this_dir + '/design-rtl' )
+  rtl            = Step( this_dir + '/design-rtl'        )
   constraints    = Step( this_dir + '/design-constraints')
 
   #-----------------------------------------------------------------------
@@ -71,7 +74,7 @@ def construct():
   #-----------------------------------------------------------------------
 
   dc             = Step( 'synopsys-dc-synthesis',                   default=True )
-  iflow          = Step( 'cadence-innovus-flowsetup',       				default=True )
+  iflow          = Step( 'cadence-innovus-flowsetup',               default=True )
   init           = Step( 'cadence-innovus-init',                    default=True )
   place          = Step( 'cadence-innovus-place',                   default=True )
   cts            = Step( 'cadence-innovus-cts',                     default=True )
@@ -81,22 +84,55 @@ def construct():
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   signoff        = Step( 'cadence-innovus-signoff',                 default=True )
 
-  magic_drc       = Step( 'open-magic-drc',                         default=True)
-  magic_def2spice = Step( 'open-magic-def2spice',                   default=True)
+  #-----------------------------------------------------------------------
+  # Custom nodes - Signoff
+  #-----------------------------------------------------------------------
+
+  # Although the Signoff DRC and LVS checks are already included in the
+  # mflowgen master branch, there are some special steps required for
+  # the SKY130 process
+  # Steps were copied and partly modified from 
+  # https://code.stanford.edu/ee272/skywater-digital-flow/-/tree/master
+
+  # DRC  
+  magic_drc       = Step( common_SKY130_steps + '/open-magic-drc'        )
+
+  # LVS can either use GDS or DEF as source for spice generation
+  magic_def2spice = Step( common_SKY130_steps + '/open-magic-def2spice'   )
+  magic_gds2spice = Step( common_SKY130_steps + '/open-magic-gds2spice'   )
+  
+  # The Verilog netlist needs to be transformed into a spice netlist
+  # You can either use Mentor Calibre:
+  # or Synopsys HSIM v2s utility
+  # or try to modify https://github.com/laurentc2/Verilog2Spice
+  # or try to use yosys https://electronics.stackexchange.com/questions/117244/verilog-to-spice-using-v2s-specificing-the-port-order-in-the-command-v2s 
+
+  #verilog2spice   = Step( common_SKY130_steps + '/mentor-calibre-verilog2spice'  )
+  verilog2spice   = Step( common_SKY130_steps + '/synopsys-hsim-verilog2spice'   )
+  
+  netgen_lvs_def  = Step( common_SKY130_steps + '/open-netgen-lvs'        )
+  netgen_lvs_gds  = netgen_lvs_def.clone()
+  netgen_lvs_def.set_name('netgen-lvs-def')
+  netgen_lvs_gds.set_name('netgen-lvs-gds')
+
+  # Export the results to the MWP caravel directory strucutures
+  export_result   = Step( common_SKY130_steps + '/caravel-uprj-export'    )
+
 
   #-----------------------------------------------------------------------
-  # Custom nodes
+  # Custom nodes - Design specific
   #-----------------------------------------------------------------------
   
   caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
   power                   = Step ( this_dir + '/cadence-innovus-power'  )
-  # use custom lvs node that include verilg to spice conversion
-  netgen_lvs              = Step( this_dir +  '/open-netgen-lvs'         )
+  
+
+  
 
   #-----------------------------------------------------------------------
   # Manipulate nodes
   #-----------------------------------------------------------------------
-	
+  
   # since the initial floorplan including io locations and power rings is 
   # already given by the initial def file, the floorplan script and
   # io_placement step is skiped
@@ -110,7 +146,7 @@ def construct():
   iflow.extend_inputs(['user_project_wrapper.def'])
   init.extend_inputs(['user_project_wrapper.def', 'floorplan.tcl'])
 
-	
+  
   #-----------------------------------------------------------------------
   # Graph -- Add nodes
   #-----------------------------------------------------------------------
@@ -132,7 +168,12 @@ def construct():
 
   g.add_step( magic_drc       )
   g.add_step( magic_def2spice )
-  g.add_step( netgen_lvs      )
+  g.add_step( magic_gds2spice )
+  g.add_step( verilog2spice   )
+  g.add_step( netgen_lvs_def  )
+  g.add_step( netgen_lvs_gds  )
+
+  g.add_step( export_result  )
 
   #-----------------------------------------------------------------------
   # Graph -- Add edges
@@ -152,8 +193,12 @@ def construct():
   g.connect_by_name( adk,            postroute_hold )
   g.connect_by_name( adk,            signoff        )
   g.connect_by_name( adk,            magic_drc      )
+
+  g.connect_by_name( adk,            verilog2spice  )
   g.connect_by_name( adk,            magic_def2spice)
-  g.connect_by_name( adk,            netgen_lvs     )
+  g.connect_by_name( adk,            netgen_lvs_def )
+  g.connect_by_name( adk,            magic_gds2spice)
+  g.connect_by_name( adk,            netgen_lvs_gds )
 
   g.connect_by_name( rtl,            dc             )
   g.connect_by_name( constraints,    dc             )
@@ -163,10 +208,10 @@ def construct():
   g.connect_by_name( dc,             power          )
   g.connect_by_name( dc,             place          )
   g.connect_by_name( dc,             cts            )
-	
+  
   g.connect_by_name( caravel_upr_floorplan, iflow   )
   g.connect_by_name( caravel_upr_floorplan, init    )
-  	
+    
   g.connect_by_name( iflow,          init           )
   g.connect_by_name( iflow,          power          )
   g.connect_by_name( iflow,          place          )
@@ -187,11 +232,20 @@ def construct():
   g.connect_by_name( postroute_hold, signoff        )
 
   g.connect_by_name( signoff,         magic_drc       )
+  g.connect_by_name( signoff,         verilog2spice   )
+
   g.connect_by_name( signoff,         magic_def2spice )
-  g.connect_by_name( signoff,         netgen_lvs      )
-  g.connect_by_name( magic_def2spice, netgen_lvs      )
+  g.connect_by_name( signoff,   netgen_lvs_def  )
+  g.connect_by_name( magic_def2spice, netgen_lvs_def  )
 
+  g.connect_by_name( signoff,         magic_gds2spice )
+  g.connect_by_name( signoff,   netgen_lvs_gds  )
+  g.connect_by_name( magic_gds2spice, netgen_lvs_gds  )
 
+  
+
+  g.connect_by_name( signoff,         export_result   )
+  g.connect_by_name( netgen_lvs_def,  export_result   )
 
   #-----------------------------------------------------------------------
   # Parameterize

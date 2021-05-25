@@ -1,7 +1,36 @@
 # Caravel User Project for the use of mflowgen with commercial EDA tools
 
+This repository provides a template ASIC implementation flow using commercial EDA tools using the flow generator mflowgen for the Google/efabless caravel MWP program.
 
-Readme is on the todo list...
+mflowgen is a modular flow specification and build-system generator that can be used to define implementation steps for both ASIC and FPGA designs and any Process design kit, including the Skywater open-source PDK.
+
+## Features
+
+Following features have been implemented so far:
+
+- Basic implementation flow for the user_project_wrapper using Synopsys DC for synthesis, Cadence Innovus for PnR, Magic and Netgen for DRC and LVS
+- Initial floorplan file for the user_project_wrapper for full power/ground design capabilities in Cadence Innovus
+- Integrated into the MWP caravel user project wrapper 
+- Additional single-command automation to install and setup all repository dependencies
+	+ mflowgen
+	+ skywater-130-nm ADK (mflowgen's PDK view) with fully automated file setup
+	+ PDK, openLane, ... dependencies already provided by the source repository
+- Single-command to build and clean implementation flows
+
+
+Planned features are:
+- Basic RTL and GL simulation flows using Mentor Modelsim and Power Estimation using Synopsys PrimeTime PX/PrimePower
+
+## Installation
+
+
+## mflowgen usage
+
+## Verification
+
+## Initial Floorplan
+
+## Changelog
 
 For now only the changes are listed:
 - Install mflowgen as submodule and virtual enviroment using Make

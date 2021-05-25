@@ -17,6 +17,7 @@ outputs:
   # of the cadence-innovus-flowsetup step
   - setup.tcl
   # A floorplan script, e.g. to set placement guides and macro placement
+  - floorplan.tcl
 
 #-------------------------------------------------------------------------
 # Commands

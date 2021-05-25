@@ -1,0 +1,33 @@
+#=========================================================================
+# Verilog 2 Spice netlist conversion for LVS using Mentor Calibre
+#=========================================================================
+# Generates a spice model for LVS using verilog netlist and spice models
+# from ADK using Mentor Calibre v2lvs
+# Author : Priyanka Raina
+# Date   : Dec 12, 2020
+#
+
+name: mentor-calibre-verilog2spice
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+inputs:
+  - adk
+  - design.lvs.v
+
+outputs:
+  - design.lvs.spice
+
+#-------------------------------------------------------------------------
+# Parameters
+#-------------------------------------------------------------------------
+
+parameters:
+  design_name: undefined
+
+commands: 
+  - v2lvs -i -lsp inputs/adk/stdcells.spi -s inputs/adk/stdcells.spi -v inputs/design.lvs.v -o outputs/design_lvs.spice
+  
+preconditions:
+  - assert Tool('v2lvs')
