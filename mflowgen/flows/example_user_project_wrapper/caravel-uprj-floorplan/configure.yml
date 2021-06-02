@@ -19,22 +19,15 @@ outputs:
   # A floorplan script, e.g. to set placement guides and macro placement
   - floorplan.tcl
 
-#-------------------------------------------------------------------------
-# Commands
-#------------------------------------------------------------------------- 
-commands:
-  # this script removes all power stripes and cell-pg connections,
-  # since this is handled by innovus
-  # it requires an input floorplan def file from the last
-  # generated def file of the floorplan stage of openlane
-  - python3 ./generate_init_def.py
-  # a result of the script can be found in this directory
 
 #-------------------------------------------------------------------------
 # Parameters
 #-------------------------------------------------------------------------
 
 parameters:
+  # which generate script to use?
+  # leave_od_metal True -> leave off-die metal pins and rings
+  leave_od_metal: True
   # overwrite script order parameter of innovus init step 
   # remove floorplanning and pin assignment for now
   iInit_order:
@@ -44,3 +37,17 @@ parameters:
     - add-endcaps-welltaps.tcl
     - make-path-groups.tcl
     - reporting.tcl
+
+
+#-------------------------------------------------------------------------
+# Commands
+#------------------------------------------------------------------------- 
+commands:
+  # this script removes all power stripes and cell-pg connections,
+  # since this is handled by innovus
+  # it requires an input floorplan def file from the last
+  # generated def file of the floorplan stage of openlane
+  
+  - python3 ./generate_init_def.py
+  # a result of the script can be found in this directory
+
