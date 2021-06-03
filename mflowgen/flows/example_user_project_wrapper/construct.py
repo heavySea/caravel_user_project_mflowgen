@@ -84,6 +84,13 @@ def construct():
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   signoff        = Step( 'cadence-innovus-signoff',                 default=True )
 
+   #-----------------------------------------------------------------------
+  # Custom nodes - Implementation
+  #-----------------------------------------------------------------------
+
+  # Special power step for the caravel user project area
+  power          = Step ( common_SKY130_steps + '/cadence-innovus-power'  )
+
   #-----------------------------------------------------------------------
   # Custom nodes - Signoff
   #-----------------------------------------------------------------------
@@ -114,11 +121,11 @@ def construct():
   # Custom nodes - Design specific
   #-----------------------------------------------------------------------
   
+  # Uses a copy of the common 'caravel-uprj-floorplan' 
+  # step in 'common_SKY130_steps, but also adds a floorplan.tcl script
+  # for placement guide instructions
   caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
-  power                   = Step ( this_dir + '/cadence-innovus-power'  )
-  
-
-  
+   
 
   #-----------------------------------------------------------------------
   # Manipulate nodes
@@ -221,7 +228,6 @@ def construct():
   g.connect_by_name( postroute_hold, signoff        )
 
   g.connect_by_name( signoff,         magic_drc       )
-  g.connect_by_name( signoff,         verilog2spice   )
 
   g.connect_by_name( signoff,         magic_def2spice )
   g.connect_by_name( signoff,         netgen_lvs_def  )

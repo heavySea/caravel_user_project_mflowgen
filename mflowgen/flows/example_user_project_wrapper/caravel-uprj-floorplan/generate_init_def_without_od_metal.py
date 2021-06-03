@@ -83,14 +83,14 @@ def remove_pgn_stripes_and_ring(text, net_name):
         signal_info = stripe[2]
 
         # generate top pin
-        new_vert_stripes.append('    - ' + net_name + '.vert_t'+ str(stripe_no) \
+        new_vert_stripes.append('    - ' + net_name \
                                 + ' + NET ' + net_name + ' ' +  signal_info \
                                 + ' + FIXED ( ' + x_pos + ' 3520000 ) N' \
                                 + ' + LAYER met4 ( -' + rect_start_x_offset + ' -' + stripe_pin_length +' )' \
                                 + ' ( ' + rect_end_x_offset + ' 0 ) ;\n') 
 
         # generate bottom pin
-        new_vert_stripes.append('    - ' + net_name + '.vert_b'+ str(stripe_no) \
+        new_vert_stripes.append('    - ' + net_name \
                                 + ' + NET ' + net_name + ' ' +  signal_info \
                                 + ' + FIXED ( ' + x_pos + ' 0 ) N' \
                                 + ' + LAYER met4 ( -' + rect_start_x_offset + ' 0 )' \
@@ -129,14 +129,14 @@ def remove_pgn_stripes_and_ring(text, net_name):
         signal_info = stripe[2]
 
         # generate left pin
-        new_horizontal_stripes.append('    - ' + net_name + '.hori_l'+ str(stripe_no) \
+        new_horizontal_stripes.append('    - ' + net_name \
                                     + ' + NET ' + net_name + ' ' +  signal_info \
                                     + ' + FIXED ( 0 ' + y_pos + ' ) N' \
                                     + ' + LAYER met5 ( 0 -' + rect_start_y_offset + ' )' \
                                     + ' ( ' + stripe_pin_length + ' ' + rect_end_y_offset + ' ) ;\n') 
 
         # generate right pin
-        new_horizontal_stripes.append('    - ' + net_name + '.hori_r'+ str(stripe_no) \
+        new_horizontal_stripes.append('    - ' + net_name \
                                     + ' + NET ' + net_name + ' ' +  signal_info \
                                     + ' + FIXED ( 2920000 ' + y_pos + ' ) N' \
                                     + ' + LAYER met5 ( -'+ stripe_pin_length + ' -' + rect_start_y_offset + ' )' \

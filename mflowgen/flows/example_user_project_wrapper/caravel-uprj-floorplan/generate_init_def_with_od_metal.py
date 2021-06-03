@@ -69,13 +69,13 @@ def shorten_pgn_stripes(text, net_name):
     vert_stripe_positions_width = []
 
     # Add the Ring pins back
-    new_vert_stripes.append('    - ' + net_name + '.ring_t' \
+    new_vert_stripes.append('    - ' + net_name \
                                 + ' + NET ' + net_name + ' ' +  top_ring[2] \
                                 + ' + FIXED ( ' + top_ring[3] + ' ' + top_ring[4] + ' ) N' \
                                 + ' + LAYER met4 ( -' + top_ring[5] + ' -' + top_ring[6] +' )' \
                                 + ' ( ' + top_ring[7] + ' ' + top_ring[8] +' ) ;\n')  
 
-    new_vert_stripes.append('    - ' + net_name + '.ring_b' \
+    new_vert_stripes.append('    - ' + net_name \
                                 + ' + NET ' + net_name + ' ' +  bottom_ring[2] \
                                 + ' + FIXED ( ' + bottom_ring[3] + ' ' + bottom_ring[4] + ' ) N' \
                                 + ' + LAYER met4 ( -' + bottom_ring[5] + ' ' + bottom_ring[6] + ' )' \
@@ -102,14 +102,14 @@ def shorten_pgn_stripes(text, net_name):
         signal_info = stripe[2]
 
         # generate top pin
-        new_vert_stripes.append('    - ' + net_name + '.vert_t'+ str(stripe_no) \
+        new_vert_stripes.append('    - ' + net_name \
                                 + ' + NET ' + net_name + ' ' +  signal_info \
                                 + ' + FIXED ( ' + x_pos + ' 3520000 ) N' \
                                 + ' + LAYER met4 ( -' + rect_start_x_offset + ' -' + stripe_pin_length +' )' \
                                 + ' ( ' + rect_end_x_offset + ' ' + y_off_die_offset_t + ' ) ;\n') 
 
         # generate bottom pin
-        new_vert_stripes.append('    - ' + net_name + '.vert_b'+ str(stripe_no) \
+        new_vert_stripes.append('    - ' + net_name \
                                 + ' + NET ' + net_name + ' ' +  signal_info \
                                 + ' + FIXED ( ' + x_pos + ' 0 ) N' \
                                 + ' + LAYER met4 ( -' + rect_start_x_offset + ' -' + y_off_die_offset_b + ' )' \
@@ -138,13 +138,13 @@ def shorten_pgn_stripes(text, net_name):
     horizontal_stripe_positions_width = []
 
     # Add the Ring pins back
-    new_horizontal_stripes.append('    - ' + net_name + '.ring_l' \
+    new_horizontal_stripes.append('    - ' + net_name \
                                     + ' + NET ' + net_name + ' ' +  left_ring[2] \
                                     + ' + FIXED ( ' + left_ring[3] + ' ' + left_ring[4]  + ' ) N' \
                                     + ' + LAYER met5 ( ' + left_ring[5]  + ' -' + left_ring[6]  + ' )' \
                                     + ' ( ' + left_ring[7]  + ' ' + left_ring[8]  + ' ) ;\n') 
 
-    new_horizontal_stripes.append('    - ' + net_name + '.ring_r' \
+    new_horizontal_stripes.append('    - ' + net_name \
                                     + ' + NET ' + net_name + ' ' +  right_ring[2] \
                                     + ' + FIXED ( ' + right_ring[3] + ' ' + right_ring[4] + ' ) N' \
                                     + ' + LAYER met5 ( -'+ right_ring[5] + ' -' + right_ring[6] + ' )' \
@@ -172,14 +172,14 @@ def shorten_pgn_stripes(text, net_name):
         signal_info = stripe[2]
 
         # generate left pin
-        new_horizontal_stripes.append('    - ' + net_name + '.hori_l'+ str(stripe_no) \
+        new_horizontal_stripes.append('    - ' + net_name \
                                     + ' + NET ' + net_name + ' ' +  signal_info \
                                     + ' + FIXED ( 0 ' + y_pos + ' ) N' \
                                     + ' + LAYER met5 ( -' + x_off_die_offset_l + ' -' + rect_start_y_offset + ' )' \
                                     + ' ( ' + stripe_pin_length + ' ' + rect_end_y_offset + ' ) ;\n') 
 
         # generate right pin
-        new_horizontal_stripes.append('    - ' + net_name + '.hori_r'+ str(stripe_no) \
+        new_horizontal_stripes.append('    - ' + net_name \
                                     + ' + NET ' + net_name + ' ' +  signal_info \
                                     + ' + FIXED ( 2920000 ' + y_pos + ' ) N' \
                                     + ' + LAYER met5 ( -'+ stripe_pin_length + ' -' + rect_start_y_offset + ' )' \
