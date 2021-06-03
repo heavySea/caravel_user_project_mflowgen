@@ -11,22 +11,16 @@
 export rep_root=../../..
 
 # 1. Copy final .def file from Innovus Signoff step and unpack ist
-gunzip -c inputs/design.def.gz > $rep_root/def/user_project_wrapper.def || echo "WARNING: Could not copy design.def.gz! File not found?"
+gunzip -c inputs/design.def.gz > $rep_root/def/${design_name}.def || echo "WARNING: Could not copy design.def.gz! File not found?"
 
 # 2. Copy the unmerge .gds
-cp inputs/design.gds.gz $rep_root/gds/user_project_wrapper.gds.gz || echo "WARNING: Could not copy design.gds.gz! File not found?"
+cp inputs/design.gds.gz $rep_root/gds/${design_name}.gds.gz || echo "WARNING: Could not copy design.gds.gz! File not found?"
 
 # 3. Copy the LEF file
-cp inputs/design.lef $rep_root/lef/user_project_wrapper.lef || echo "WARNING: Could not copy design.lef! File not found?"
+cp inputs/design.lef $rep_root/lef/${design_name}.lef || echo "WARNING: Could not copy design.lef! File not found?"
 
 # 3. Copy the spice model
-cp inputs/design.lvs.spice $rep_root/spi/lvs/user_project_wrapper.spice || echo "WARNING: Could not copy design.lvs.spice! File not found?"
+cp inputs/design.lvs.spice $rep_root/spi/lvs/${design_name}.spice || echo "WARNING: Could not copy design.lvs.spice! File not found?"
 
 # 4. Copy the verilog gate-level netlist include pg terms
-cp inputs/design.vcs.pg.v $rep_root/verilog/gl/user_project_wrapper.v || echo "WARNING: Could not copy design.vcs.pg.v! File not found?"
-# The Innovus generated netlist contains all pg stripe input reference, such as:
-# .\vssa2.hori_r19 (vssa2), -> which is then used to assign the value of the power nets
-# assign vssa2 = \vssa2.hori_r19 ;
-# the MWP precheck looks for valid port declarations, so this might get a problem
-
-# 5. .mag und .maglef files?
+cp inputs/design.vcs.pg.v $rep_root/verilog/gl/${design_name}.v || echo "WARNING: Could not copy design.vcs.pg.v! File not found?"
