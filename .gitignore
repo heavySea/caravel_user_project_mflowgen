@@ -1,2 +1,5 @@
 checks/
 mflowgen/build*/
+*.pyc
+
+open_mpw_precheck

@@ -14,8 +14,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+#-----------------------------------------------------------------------
+# Parameters & Variables
+#-----------------------------------------------------------------------
+
 CARAVEL_ROOT?=$(PWD)/caravel
-PRECHECK_ROOT?=${HOME}/open_mpw_precheck
+PRECHECK_ROOT?=${PWD}/open_mpw_precheck
 SIM ?= RTL
 
 # Install lite version of caravel, (1): caravel-lite, (0): caravel
@@ -40,6 +44,19 @@ MFLOWGEN_ROOT ?=$(PWD)/mflowgen/mflowgen
 MFLOWGEN_NAME ?= mflowgen
 MFLOWGEN_REPO ?= https://github.com/mflowgen/mflowgen
 MFLOWGEN_BRANCH ?= master
+
+# The mflowgen ADK for Skywater130 PDK
+# path is fixed
+SKY_ADK_PATH ?= $(PWD)/mflowgen/SKY130_ADK
+SKY_ADK_REPO ?= https://github.com/heavySea/skywater-130nm-adk
+SKY_ADK_BRANCH ?= master
+
+M_FLOWS := $(PWD)/mflowgen/flows
+
+
+#-----------------------------------------------------------------------
+# Mflowgen and openlane build targets
+#-----------------------------------------------------------------------
 
 # Include Caravel Makefile Targets
 .PHONY: %
@@ -71,14 +88,48 @@ $(DV_PATTERNS): verify-% : ./verilog/dv/%
                 -u $(id -u $$USER):$(id -g $$USER) efabless/dv_setup:latest \
                 sh -c $(VERIFY_COMMAND)
 				
+# Mflowgen Makefile Targets
+BLOCKS = $(shell cd mflowgen/flows && find * -maxdepth 0 -type d)
+
+BUILD_BLOCKS = $(foreach block, $(BLOCKS), mflowgen-$(block))
+
+.PHONY: $(BUILD_BLOCKS)
+$(BUILD_BLOCKS): mflowgen-%: mflowgen/build_%
+	( \
+		export TOP=${MFLOWGEN_ROOT}; \
+		cd mflowgen/build_${*}; \
+		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
+		export MFLOWGEN_PATH=${SKY_ADK_PATH}; \
+		mflowgen run --design ${M_FLOWS}/${*}; \
+		make; )
+
+mflowgen/build_%:
+	mkdir $@ 
+	cp mflowgen/flows/sourceme_mflowgen_env.sh $@
+	sed "s|export MFLOWGEN_ROOT=.*|export MFLOWGEN_ROOT=${MFLOWGEN_ROOT}|g" -i $@/sourceme_mflowgen_env.sh
+	sed "s|export MFLOWGEN_PATH=.*|export MFLOWGEN_PATH=${SKY_ADK_PATH}|g" -i $@/sourceme_mflowgen_env.sh
+	chmod a+x $@/sourceme_mflowgen_env.sh
+
+CLEAN_BLOCKS = $(foreach block, $(BLOCKS), clean-$(block))
+#.PHONY: clean_$(BLOCKS)
+$(CLEAN_BLOCKS): clean-% :
+	rm -rf mflowgen/build_$*
+
+
 # Openlane Makefile Targets
-BLOCKS = $(shell cd openlane && find * -maxdepth 0 -type d)
-.PHONY: $(BLOCKS)
-$(BLOCKS): %:
+OL_BLOCKS = $(shell cd openlane && find * -maxdepth 0 -type d)
+OL_BUILD_BLOCKS = $(foreach block, $(OL_BLOCKS), openlane-$(block))
+.PHONY: $(OL_BUILD_BLOCKS)
+$(OL_BUILD_BLOCKS): openlane-%:
 	cd openlane && $(MAKE) $*
 
 .PHONY: install
-install: install_caravel install_mflowgen
+install: install_caravel install_mflowgen install_ADK
+
+#-----------------------------------------------------------------------
+# Installation targets, etc.
+#-----------------------------------------------------------------------
+
 
 # Install caravel
 .PHONY: install_caravel
@@ -133,6 +184,17 @@ install_mflowgen_venv: check-mflowgen
 		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
 		pip install -e .; )
 
+export PDK_ROOT
+
+.PHONY: install_ADK
+install_ADK: check-pdk
+	@echo "Installing mflowgen Skywater ADK as a submodule in $(SKY_ADK_PATH)"
+	$(eval ADK_PATH := $(shell realpath --relative-to=$(shell pwd) $(SKY_ADK_PATH)))
+	@if [ ! -d $(SKY_ADK_PATH) ]; then git submodule add --name SKY130_ADK $(SKY_ADK_REPO) $(ADK_PATH); fi
+	@git submodule update --init $(ADK_PATH)
+	cd $(SKY_ADK_PATH); git checkout $(SKY_ADK_BRANCH)
+	cd $(SKY_ADK_PATH) && $(MAKE) install
+
 # Update Caravel
 .PHONY: update_caravel
 update_caravel: check-caravel
@@ -147,7 +209,7 @@ else
 		git pull
 endif
 
-# Update Caravel
+# Update mflowgen
 .PHONY: update_mflowgen
 update_mflowgen: check-mflowgen
 	@git submodule update --init --recursive $(MFLOWGEN_ROOT)
@@ -155,12 +217,21 @@ update_mflowgen: check-mflowgen
 	git checkout $(MFLOWGEN_BRANCH) && \
 	git pull
 
+# Update SKY ADK
+.PHONY: update_ADK
+update_ADK: check-ADK
+	@git submodule update --init --recursive $(SKY_ADK_PATH)
+	cd $(SKY_ADK_PATH) && \
+	git checkout $(SKY_ADK_BRANCH) && \
+	git pull
+	cd $(SKY_ADK_PATH) && $(MAKE) install
+
 .PHONY: uninstall
-uninstall: uninstall_caravel uninstall_mflowgen
+uninstall: uninstall_caravel uninstall_mflowgen uninstall_ADK
 
 # Uninstall Caravel
 .PHONY: uninstall_caravel
-uninstall_caravel: 
+uninstall_caravel: check-caravel
 	# Caravel
 ifeq ($(SUBMODULE),1)
 	git config -f .gitmodules --remove-section "submodule.$(CARAVEL_NAME)"
@@ -175,7 +246,7 @@ endif
 
 # Uninstall Mflowgen
 .PHONY: uninstall_mflowgen
-uninstall_mflowgen:
+uninstall_mflowgen: check-mflowgen
 	git config -f .gitmodules --remove-section "submodule.$(MFLOWGEN_NAME)"
 	git config -f .git/config --remove-section "submodule.$(MFLOWGEN_NAME)"
 	git add .gitmodules
@@ -186,6 +257,17 @@ uninstall_mflowgen:
 ifeq ($(MFLOWGEN_ROOT),$(PWD)/mflowgen/mflowgen)
 	rm -rf $(MFLOWGEN_ROOT)
 endif
+
+# Uninstall ADK
+.PHONY: uninstall_ADK
+uninstall_ADK: check-ADK
+	git config -f .gitmodules --remove-section "submodule.SKY130_ADK"
+	git config -f .git/config --remove-section "submodule.SKY130_ADK"
+	git add .gitmodules
+	git submodule deinit -f $(SKY_ADK_PATH)
+	git rm -f --cached $(SKY_ADK_PATH)
+	rm -rf .git/modules/$(SKY130_ADK)
+	rm -rf $(SKY_ADK_PATH)
 	
 
 # Install Openlane
@@ -212,6 +294,7 @@ run-precheck: check-precheck check-pdk check-caravel
 pdk-nonnative: skywater-pdk skywater-library skywater-timing open_pdks
 	docker run --rm -v $(PDK_ROOT):$(PDK_ROOT) -v $(pwd):/user_project -v $(CARAVEL_ROOT):$(CARAVEL_ROOT) -e CARAVEL_ROOT=$(CARAVEL_ROOT) -e PDK_ROOT=$(PDK_ROOT) -u $(shell id -u $(USER)):$(shell id -g $(USER)) efabless/openlane:current sh -c "cd $(CARAVEL_ROOT); make build-pdk; make gen-sources"
 
+
 # Clean 
 .PHONY: clean
 clean:
@@ -227,6 +310,12 @@ check-caravel:
 check-mflowgen:
 	@if [ ! -d "$(MFLOWGEN_ROOT)" ]; then \
 		echo "Mflowgen Root: "$(MFLOWGEN_ROOT)" doesn't exists, please export the correct path before running make. "; \
+		exit 1; \
+	fi
+
+check-ADK:
+	@if [ ! -d "$(SKY_ADK_PATH)" ]; then \
+		echo "Mflowgen Root: "$(SKY_ADK_PATH)" doesn't exists, please export the correct path before running make. "; \
 		exit 1; \
 	fi
 

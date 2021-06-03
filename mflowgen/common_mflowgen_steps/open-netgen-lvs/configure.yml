@@ -1,0 +1,32 @@
+#=========================================================================
+# LVS using netgen
+#=========================================================================
+# Author : Priyanka Raina
+# Date   : Dec 12, 2020
+#
+
+name: open-netgen-lvs
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+inputs:
+  - adk
+  - design_extracted.spice
+  - design.lvs.v
+
+outputs:
+  - lvs_results.log
+
+#-------------------------------------------------------------------------
+# Parameters
+#-------------------------------------------------------------------------
+
+parameters:
+  design_name: undefined
+
+commands:
+  - netgen -batch lvs inputs/design_extracted.spice inputs/design.lvs.v inputs/adk/netgen_setup.tcl outputs/lvs_results.log
+
+preconditions:
+  - assert Tool('netgen')
