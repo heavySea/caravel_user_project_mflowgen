@@ -17,7 +17,6 @@ inputs:
 
 outputs:
   - lvs_results.log
-  - design.lvs.spice
 
 #-------------------------------------------------------------------------
 # Parameters
