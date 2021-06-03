@@ -14,6 +14,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+#-----------------------------------------------------------------------
+# Parameters & Variables
+#-----------------------------------------------------------------------
+
 CARAVEL_ROOT?=$(PWD)/caravel
 PRECHECK_ROOT?=${PWD}/open_mpw_precheck
 SIM ?= RTL
@@ -48,6 +52,11 @@ SKY_ADK_REPO ?= https://github.com/heavySea/skywater-130nm-adk
 SKY_ADK_BRANCH ?= master
 
 M_FLOWS := $(PWD)/mflowgen/flows
+
+
+#-----------------------------------------------------------------------
+# Mflowgen and openlane build targets
+#-----------------------------------------------------------------------
 
 # Include Caravel Makefile Targets
 .PHONY: %
@@ -84,7 +93,7 @@ BLOCKS = $(shell cd mflowgen/flows && find * -maxdepth 0 -type d)
 
 BUILD_BLOCKS = $(foreach block, $(BLOCKS), mflowgen-$(block))
 
-.PHONY: $(BLOCKS)
+.PHONY: $(BUILD_BLOCKS)
 $(BUILD_BLOCKS): mflowgen-%: mflowgen/build_%
 	( \
 		export TOP=${MFLOWGEN_ROOT}; \
@@ -106,8 +115,21 @@ CLEAN_BLOCKS = $(foreach block, $(BLOCKS), clean-$(block))
 $(CLEAN_BLOCKS): clean-% :
 	rm -rf mflowgen/build_$*
 
+
+# Openlane Makefile Targets
+OL_BLOCKS = $(shell cd openlane && find * -maxdepth 0 -type d)
+OL_BUILD_BLOCKS = $(foreach block, $(OL_BLOCKS), openlane-$(block))
+.PHONY: $(OL_BUILD_BLOCKS)
+$(OL_BUILD_BLOCKS): openlane-%:
+	cd openlane && $(MAKE) $*
+
 .PHONY: install
 install: install_caravel install_mflowgen install_ADK
+
+#-----------------------------------------------------------------------
+# Installation targets, etc.
+#-----------------------------------------------------------------------
+
 
 # Install caravel
 .PHONY: install_caravel
