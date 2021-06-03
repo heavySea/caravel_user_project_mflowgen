@@ -101,15 +101,6 @@ def construct():
   magic_def2spice = Step( common_SKY130_steps + '/open-magic-def2spice'   )
   magic_gds2spice = Step( common_SKY130_steps + '/open-magic-gds2spice'   )
   
-  # The Verilog netlist needs to be transformed into a spice netlist
-  # You can either use Mentor Calibre:
-  # or Synopsys HSIM v2s utility
-  # or try to modify https://github.com/laurentc2/Verilog2Spice
-  # or try to use yosys https://electronics.stackexchange.com/questions/117244/verilog-to-spice-using-v2s-specificing-the-port-order-in-the-command-v2s 
-
-  #verilog2spice   = Step( common_SKY130_steps + '/mentor-calibre-verilog2spice'  )
-  verilog2spice   = Step( common_SKY130_steps + '/synopsys-hsim-verilog2spice'   )
-  
   netgen_lvs_def  = Step( common_SKY130_steps + '/open-netgen-lvs'        )
   netgen_lvs_gds  = netgen_lvs_def.clone()
   netgen_lvs_def.set_name('netgen-lvs-def')
@@ -169,7 +160,6 @@ def construct():
   g.add_step( magic_drc       )
   g.add_step( magic_def2spice )
   g.add_step( magic_gds2spice )
-  g.add_step( verilog2spice   )
   g.add_step( netgen_lvs_def  )
   g.add_step( netgen_lvs_gds  )
 
@@ -194,7 +184,6 @@ def construct():
   g.connect_by_name( adk,            signoff        )
   g.connect_by_name( adk,            magic_drc      )
 
-  g.connect_by_name( adk,            verilog2spice  )
   g.connect_by_name( adk,            magic_def2spice)
   g.connect_by_name( adk,            netgen_lvs_def )
   g.connect_by_name( adk,            magic_gds2spice)
@@ -235,11 +224,11 @@ def construct():
   g.connect_by_name( signoff,         verilog2spice   )
 
   g.connect_by_name( signoff,         magic_def2spice )
-  g.connect_by_name( signoff,   netgen_lvs_def  )
+  g.connect_by_name( signoff,         netgen_lvs_def  )
   g.connect_by_name( magic_def2spice, netgen_lvs_def  )
 
   g.connect_by_name( signoff,         magic_gds2spice )
-  g.connect_by_name( signoff,   netgen_lvs_gds  )
+  g.connect_by_name( signoff,         netgen_lvs_gds  )
   g.connect_by_name( magic_gds2spice, netgen_lvs_gds  )
 
   
