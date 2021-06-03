@@ -90,6 +90,8 @@ setAddStripeMode -stacked_via_bottom_layer [expr $base_layer_idx + 1] \
 # Add the stripes
 # Use physical pin locations for stripes
 
+# This only add stripes for one digital pg net (the only one used in the
+# wrapper example). Duplicate following commands to use other pg nets
 
 addStripe -nets {vssd1 vccd1} -layer $pmesh_bot -direction vertical \
     -over_physical_pins 1 -pin_layer $pmesh_bot \
@@ -121,15 +123,16 @@ setAddStripeMode -stacked_via_bottom_layer $pmesh_bot \
                  -break_at block_ring
 
 # Add the stripes
-#
-# Use -start to offset the stripes slightly away from the core edge.
-# Allow same-layer jogs to connect stripes to the core ring if some
-# blockage is in the way (e.g., connections from core ring to pads).
-# Restrict any routing around blockages to use only layers for power.
+# Use physical pin locations for stripes
+
+# This only add stripes for one digital pg net (the only one used in the
+# wrapper example). Duplicate following commands to use other pg nets
 
 addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
     -over_physical_pins 1 -pin_layer $pmesh_top \
     -width pin_width
+
+
 
 #-------------------------------------------------------------------------
 # Stdcell power rail preroute

@@ -14,7 +14,9 @@
 #-------------------------------------------------------------------------
 
 # Connect SKY130 pg pins with VCCD1/VSSD1
-
+# This connects all cells and macros to one digitial pg net!
+# Specify the -inst argument to select which instances to connect to which
+# power domain if your design cointains multiple!
 
 if { [ lindex [dbGet top.insts.cell.pgterms.name VPWR] 0 ] != 0x0 } {
   globalNetConnect vccd1 -type pgpin -pin VPWR -inst * -verbose
@@ -26,13 +28,11 @@ if { [ lindex [dbGet top.insts.cell.pgterms.name VGND] 0 ] != 0x0 } {
 
 
 # Connect VNB / VPB if any cells have these pins
-# TODO: Not sure about this! VNB and VPB are actually pwell and nwell connections!!
+if { [ lindex [dbGet top.insts.cell.pgterms.name VNB] 0 ] != 0x0 } {
+  globalNetConnect vssd1 -type pgpin -pin VNB -inst * -verbose
+}
 
-#if { [ lindex [dbGet top.insts.cell.pgterms.name VNB] 0 ] != 0x0 } {
-#  globalNetConnect VSS -type pgpin -pin VNB -inst * -verbose
-#}
-
-#if { [ lindex [dbGet top.insts.cell.pgterms.name VPB] 0 ] != 0x0 } {
-#  globalNetConnect VDD -type pgpin -pin VPB -inst * -verbose
-#}
+if { [ lindex [dbGet top.insts.cell.pgterms.name VPB] 0 ] != 0x0 } {
+  globalNetConnect vccd1 -type pgpin -pin VPB -inst * -verbose
+}
 
