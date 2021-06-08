@@ -273,7 +273,7 @@ Currently timing sign-off is only done in Innovus, but planned to be done in Syn
 
 ## Full-Chip Simulation
 
-Currently using the default Icarus Verilog based simulation. See the [original README](https://caravel-user-project.readthedocs.io/en/latest/#running-full-chip-simulation).
+Currently you need to use the default Icarus Verilog based simulation make targets. See the [original README](https://caravel-user-project.readthedocs.io/en/latest/#running-full-chip-simulation).
 
 Planned to be extended with Mentor Modelsim simulations.
 

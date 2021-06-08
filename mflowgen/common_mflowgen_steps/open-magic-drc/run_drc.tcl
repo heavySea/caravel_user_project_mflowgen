@@ -20,20 +20,20 @@ set total_count 0
 set oscale [cif scale out]
 puts "$::env(design_name)"
 puts "----------------------------------------"
-foreach {errtype coordlist} $drcresult { \
-    puts "[DRC VIOLATION]: $errtype" \
-    puts "----------------------------------------" \
-    foreach coord $coordlist { \
-        set bllx [expr {$oscale * [lindex $coord 0]}] \
-        set blly [expr {$oscale * [lindex $coord 1]}] \
-        set burx [expr {$oscale * [lindex $coord 2]}] \
-        set bury [expr {$oscale * [lindex $coord 3]}] \
-        set coords [format " %.3f %.3f %.3f %.3f" $bllx $blly $burx $bury] \
-        puts "\t[VIOLATION LOCATION]:$coords" \
-        set total_count [expr {$total_count + 1} ] \
-    } \
-    set count [expr {$count + 1} ] \
-    puts "----------------------------------------" \
+foreach {errtype coordlist} $drcresult {
+    puts "\[DRC VIOLATION\]: $errtype"
+    puts "----------------------------------------" 
+    foreach coord $coordlist { 
+        set bllx [expr {$oscale * [lindex $coord 0]}] 
+        set blly [expr {$oscale * [lindex $coord 1]}] 
+        set burx [expr {$oscale * [lindex $coord 2]}]
+        set bury [expr {$oscale * [lindex $coord 3]}] 
+        set coords [format " %.3f %.3f %.3f %.3f" $bllx $blly $burx $bury] 
+        puts "\t\[VIOLATION LOCATION]:$coords" 
+        set total_count [expr {$total_count + 1} ] 
+    } 
+    set count [expr {$count + 1} ] 
+    puts "----------------------------------------" 
 }
 
 puts "\[DRC VIOLATION COUNT\]: $count"

@@ -6,6 +6,6 @@
 
 # Report area
 
-report_area -verbose > $vars(rpt_dir)/$vars(step).area.rpt
+report_area > $vars(rpt_dir)/$vars(step).area.rpt
 
 

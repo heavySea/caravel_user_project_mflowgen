@@ -1,0 +1,29 @@
+#=========================================================================
+# Innovus node for the initial floorplan of the userproject wrapper
+#=========================================================================
+
+name: caravel-uprj-floorplan
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+
+outputs:
+  # The pg nets for the MWP must be changed during the foundation flow setup
+  # the setup.tcl can be extened by an additional setup.tcl at the input 
+  # of the cadence-innovus-flowsetup step
+  - setup.tcl
+  # A floorplan script, e.g. to set placement guides and macro placement
+  - floorplan.tcl
+  # IO Pin assignment
+  - pin-assignments.tcl
+
+
+#-------------------------------------------------------------------------
+# Parameters
+#-------------------------------------------------------------------------
+
+
+
+
+

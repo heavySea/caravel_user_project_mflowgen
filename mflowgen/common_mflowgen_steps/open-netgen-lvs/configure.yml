@@ -26,7 +26,7 @@ parameters:
   design_name: undefined
 
 commands:
-  - netgen -batch lvs inputs/design_extracted.spice inputs/design.lvs.v inputs/adk/netgen_setup.tcl outputs/lvs_results.log
+  - sh run_lvs.sh
 
 preconditions:
   - assert Tool('netgen')
