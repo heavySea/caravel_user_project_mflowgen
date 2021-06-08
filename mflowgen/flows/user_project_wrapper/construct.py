@@ -29,13 +29,12 @@ def construct():
   #-----------------------------------------------------------------------
   # Parameters
   #-----------------------------------------------------------------------
-
-  power_estimation = True
-
+  
+  # Don't use topographical mode, as long as TLU+ files are missing
   parameters = {
     'construct_path' : __file__,
     'design_name'    : 'user_project_wrapper',
-    'topographical'  : True,
+    'topographical'  : False,
     'saif_instance'  : '',
     'clock_period'   : 10.0 
   }
@@ -84,15 +83,8 @@ def construct():
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   signoff        = Step( 'cadence-innovus-signoff',                 default=True )
 
-   #-----------------------------------------------------------------------
-  # Custom nodes - Implementation
   #-----------------------------------------------------------------------
-
-  # Special power step for the caravel user project area
-  power          = Step ( common_SKY130_steps + '/cadence-innovus-power'  )
-
-  #-----------------------------------------------------------------------
-  # Custom nodes - Signoff
+  # Custom nodes
   #-----------------------------------------------------------------------
 
   # Although the Signoff DRC and LVS checks are already included in the
@@ -116,7 +108,6 @@ def construct():
   # Export the results to the MWP caravel directory strucutures
   export_result   = Step( common_SKY130_steps + '/caravel-uprj-export'    )
 
-
   #-----------------------------------------------------------------------
   # Custom nodes - Design specific
   #-----------------------------------------------------------------------
@@ -125,6 +116,7 @@ def construct():
   # step in 'common_SKY130_steps, but also adds a floorplan.tcl script
   # for placement guide instructions
   caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
+  power                   = Step ( this_dir + '/cadence-innovus-power'  )
    
 
   #-----------------------------------------------------------------------
