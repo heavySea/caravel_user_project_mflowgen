@@ -53,6 +53,7 @@ SKY_ADK_BRANCH ?= master
 
 M_FLOWS := $(PWD)/mflowgen/flows
 
+MFLOWGEN_INTERACTIVE_FLOW ?= 0
 
 #-----------------------------------------------------------------------
 # Mflowgen and openlane build targets
@@ -101,7 +102,9 @@ $(BUILD_BLOCKS): mflowgen-%: mflowgen/build_%
 		. $(MFLOWGEN_ROOT)/venv/bin/activate; \
 		export MFLOWGEN_PATH=${SKY_ADK_PATH}; \
 		mflowgen run --design ${M_FLOWS}/${*}; \
-		make; )
+		if [ "${MFLOWGEN_INTERACTIVE_FLOW}" -eq 0 ]; then \
+			make; \
+		fi )
 
 mflowgen/build_%:
 	mkdir $@ 
