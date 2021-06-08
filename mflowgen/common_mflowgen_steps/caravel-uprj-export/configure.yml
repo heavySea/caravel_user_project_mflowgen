@@ -13,7 +13,7 @@ name: caravel-uprj-export
 inputs:
   # All inputs from Innovus Signoff step
   - design.def.gz
-  - design.gds.gz
+  - design-merged.gds
   - design.lef
   - design.lvs.spice
   - design.vcs.pg.v

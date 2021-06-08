@@ -27,12 +27,13 @@ if { [ lindex [dbGet top.insts.cell.pgterms.name VGND] 0 ] != 0x0 } {
 }
 
 
-# Connect VNB / VPB if any cells have these pins
-if { [ lindex [dbGet top.insts.cell.pgterms.name VNB] 0 ] != 0x0 } {
-  globalNetConnect vssd1 -type pgpin -pin VNB -inst * -verbose
-}
+# Do not connect VNB / VPB to Ground/Power lines, since std. cells are not tapped!
+# Use tap cell!!
+# if { [ lindex [dbGet top.insts.cell.pgterms.name VNB] 0 ] != 0x0 } {
+#   globalNetConnect vssd1 -type pgpin -pin VNB -inst * -verbose
+# }
 
-if { [ lindex [dbGet top.insts.cell.pgterms.name VPB] 0 ] != 0x0 } {
-  globalNetConnect vccd1 -type pgpin -pin VPB -inst * -verbose
-}
+# if { [ lindex [dbGet top.insts.cell.pgterms.name VPB] 0 ] != 0x0 } {
+#   globalNetConnect vccd1 -type pgpin -pin VPB -inst * -verbose
+# }
 
