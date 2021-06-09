@@ -1,23 +1,21 @@
 #=========================================================================
-# Export step to copy all implementation result to the MWP directory structure
+# Run antenna check
 #=========================================================================
-# Author : Maximilian Koschay
+# Author : Kartik Prabhu
+# Date   : May 25, 2021
 #
 
-name: caravel-uprj-export
+name: open-magic-antenna
 
 #-------------------------------------------------------------------------
 # Inputs and Outputs
 #-------------------------------------------------------------------------
-
 inputs:
-  # All inputs from Innovus Signoff step
+  - adk
   - design.def.gz
-  - design-merged.gds
-  - design.lef
-  - design_extracted.spice
-  - design.vcs.pg.v
 
+outputs:
+  - antenna_check.log
 
 #-------------------------------------------------------------------------
 # Parameters
@@ -26,9 +24,10 @@ inputs:
 parameters:
   design_name: undefined
 
-#-------------------------------------------------------------------------
-# Commands
-#-------------------------------------------------------------------------
-
 commands:
-  - ./export-results.sh
+  - cp inputs/adk/magicrc .magicrc
+  - cp inputs/adk/rtk-tech.lef rtk-tech-nolicon.lef
+  - sed -i '/LAYER licon/,/END licon/d' rtk-tech-nolicon.lef
+  - cp -L inputs/design.def.gz design.def.gz 
+  - gunzip design.def.gz 
+  - magic -noconsole -dnull run_antenna.tcl | tee outputs/antenna_check.log
