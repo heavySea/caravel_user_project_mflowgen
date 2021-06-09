@@ -29,7 +29,7 @@ def construct():
   #-----------------------------------------------------------------------
   # Parameters
   #-----------------------------------------------------------------------
-  
+
   # Don't use topographical mode, as long as TLU+ files are missing
   parameters = {
     'construct_path' : __file__,
@@ -81,7 +81,7 @@ def construct():
   route          = Step( 'cadence-innovus-route',                   default=True )
   postroute      = Step( 'cadence-innovus-postroute',               default=True )
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
-  signoff        = Step( 'cadence-innovus-signoff',                 default=True )
+  
 
   #-----------------------------------------------------------------------
   # Custom nodes
@@ -95,15 +95,21 @@ def construct():
 
   # DRC  
   magic_drc       = Step( common_SKY130_steps + '/open-magic-drc'        )
+  # Antenna DRC
+  magic_antenna   = Step( common_SKY130_steps + '/open-magic-antenna'        )
 
   # LVS can either use GDS or DEF as source for spice generation
-  magic_def2spice = Step( common_SKY130_steps + '/open-magic-def2spice'   )
+  # Use only merged GDS extraction for now (DEF extraction failes)
+  # magic_def2spice = Step( common_SKY130_steps + '/open-magic-def2spice'   )
   magic_gds2spice = Step( common_SKY130_steps + '/open-magic-gds2spice'   )
   
-  netgen_lvs_def  = Step( common_SKY130_steps + '/open-netgen-lvs'        )
-  netgen_lvs_gds  = netgen_lvs_def.clone()
-  netgen_lvs_def.set_name('netgen-lvs-def')
+  netgen_lvs_gds  = Step( common_SKY130_steps + '/open-netgen-lvs'        )
+  # netgen_lvs_def  = netgen_lvs_def.clone()
   netgen_lvs_gds.set_name('netgen-lvs-gds')
+  # netgen_lvs_def.set_name('netgen-lvs-def')
+
+  # Custom signoff to flatten netlists for LVS netlist export
+  signoff         = Step( common_SKY130_steps + '/cadence-innovus-signoff')
 
   # Export the results to the MWP caravel directory strucutures
   export_result   = Step( common_SKY130_steps + '/caravel-uprj-export'    )
@@ -157,9 +163,10 @@ def construct():
   g.add_step( signoff        )
 
   g.add_step( magic_drc       )
-  g.add_step( magic_def2spice )
+  g.add_step( magic_antenna   )
+  # g.add_step( magic_def2spice )
   g.add_step( magic_gds2spice )
-  g.add_step( netgen_lvs_def  )
+  # g.add_step( netgen_lvs_def  )
   g.add_step( netgen_lvs_gds  )
 
   g.add_step( export_result  )
@@ -181,10 +188,12 @@ def construct():
   g.connect_by_name( adk,            postroute      )
   g.connect_by_name( adk,            postroute_hold )
   g.connect_by_name( adk,            signoff        )
+  
   g.connect_by_name( adk,            magic_drc      )
+  g.connect_by_name( adk,            magic_antenna  )
 
-  g.connect_by_name( adk,            magic_def2spice)
-  g.connect_by_name( adk,            netgen_lvs_def )
+  # g.connect_by_name( adk,            magic_def2spice)
+  # g.connect_by_name( adk,            netgen_lvs_def )
   g.connect_by_name( adk,            magic_gds2spice)
   g.connect_by_name( adk,            netgen_lvs_gds )
 
@@ -219,11 +228,12 @@ def construct():
   g.connect_by_name( postroute,      postroute_hold )
   g.connect_by_name( postroute_hold, signoff        )
 
-  g.connect_by_name( signoff,         magic_drc       )
+  g.connect_by_name( signoff,         magic_drc     )
+  g.connect_by_name( signoff,         magic_antenna )
 
-  g.connect_by_name( signoff,         magic_def2spice )
-  g.connect_by_name( signoff,         netgen_lvs_def  )
-  g.connect_by_name( magic_def2spice, netgen_lvs_def  )
+  # g.connect_by_name( signoff,         magic_def2spice )
+  # g.connect_by_name( signoff,         netgen_lvs_def  )
+  # g.connect_by_name( magic_def2spice, netgen_lvs_def  )
 
   g.connect_by_name( signoff,         magic_gds2spice )
   g.connect_by_name( signoff,         netgen_lvs_gds  )
@@ -232,7 +242,7 @@ def construct():
   
 
   g.connect_by_name( signoff,         export_result   )
-  g.connect_by_name( netgen_lvs_def,  export_result   )
+  g.connect_by_name( magic_gds2spice, export_result   )
 
   #-----------------------------------------------------------------------
   # Parameterize
