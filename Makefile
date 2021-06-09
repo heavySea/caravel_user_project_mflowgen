@@ -238,6 +238,7 @@ uninstall_caravel: check-caravel
 	# Caravel
 ifeq ($(SUBMODULE),1)
 	git config -f .gitmodules --remove-section "submodule.$(CARAVEL_NAME)"
+	git config -f .git/config --remove-section "submodule.$(CARAVEL_NAME)"
 	git add .gitmodules
 	git submodule deinit -f $(CARAVEL_ROOT)
 	git rm --cached $(CARAVEL_ROOT)

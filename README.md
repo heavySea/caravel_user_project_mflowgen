@@ -2,7 +2,7 @@
 
 This repository provides a template ASIC implementation flow for commercial EDA tools using the flow generator [mflowgen](https://github.com/mflowgen/mflowgen) for the [Google/efabless caravel MWP program](https://www.efabless.com/open_shuttle_program/2).
 
-[mflowgen](https://github.com/mflowgen/mflowgen) is a modular flow specification and build-system generator that can be used to define implementation steps for both ASIC and FPGA designs using any process design kit, including the [Skywater open-source PDK](https://github.com/google/skywater-pdk).
+[Mflowgen](https://github.com/mflowgen/mflowgen) is a modular flow specification and build-system generator that can be used to define implementation steps for both ASIC and FPGA designs using any process design kit, including the [Skywater open-source PDK](https://github.com/google/skywater-pdk).
 
 ## Features
 
@@ -11,15 +11,17 @@ Following features have been implemented so far:
 - Basic implementation flow for the user_project_wrapper using Synopsys DC for synthesis, Cadence Innovus for PnR, Magic and Netgen for DRC and LVS
 - Initial floorplan file for the user_project_wrapper for full power/ground design capabilities in Cadence Innovus
 - Additional single-command automation to install and setup all repository dependencies
-	+ mflowgen
+	+ [Mflowgen](https://github.com/mflowgen/mflowgen)
 	+ [skywater-130nm-adk](https://github.com/heavySea/skywater-130nm-adk) (mflowgen's PDK view) with automated file setup
 	+ PDK, openLane, ... dependencies already provided by the source repository
-- Single-command to build and clean implementation flows
+- Single-command to build and clean implementation flows using Mflowgen
+- Template implementation flow for the user project wrapper with commercial EDA tools
 
 Planned features are:
 - Basic RTL and GL simulation flows using Mentor Modelsim and Power Estimation using Synopsys PrimeTime PX/PrimePower
 - TLU+ file generation as done in https://github.com/google/skywater-pdk/pull/185
-- user_proj_example flow
+- Stable DRC and LVS
+- Template implementation flow for the user project example
 
 ## Installation
 
@@ -278,3 +280,13 @@ Planned to be extended with Mentor Modelsim simulations.
 ## Known problems:
 
 - magic DEF2SPICE and GDS2SPICE steps are failing 
+- LVS result failes due to unmatched nets from the Innovus verilog netlist
+
+## Contributions
+
+[Mflowgen](https://github.com/mflowgen/mflowgen) is authored and maintained by Christopher Torng and offered under the terms of the Open Source Initiative BSD 3-Clause License.
+
+The [skywater-130nm-ADK repository](https://github.com/heavySea/skywater-130nm-adk) used here has been derived from the [ADK repository of Priyanka Raina, Stanford University course EE272](https://code.stanford.edu/ee272/skywater-130nm-adk). 
+The implementation flow has also been derived from the [skywater-digital-flow repository](https://code.stanford.edu/ee272/skywater-digital-flow) by Priyanka Raina, Stanford University course EE272.
+
+MWP Caravel related files are provided by Efabless as in the original [caravel_user_project](https://github.com/efabless/caravel_user_project) repository.
