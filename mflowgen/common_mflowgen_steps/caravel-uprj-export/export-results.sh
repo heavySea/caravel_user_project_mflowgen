@@ -21,7 +21,7 @@ gzip -c ${design_name}.gds > ${rep_root}/gds/${design_name}.gds.gz
 cp inputs/design.lef $rep_root/lef/${design_name}.lef || echo "WARNING: Could not copy design.lef! File not found?"
 
 # 3. Copy the spice model
-cp inputs/design.lvs.spice $rep_root/spi/lvs/${design_name}.spice || echo "WARNING: Could not copy design.lvs.spice! File not found?"
+cp inputs/design_extracted.spice $rep_root/spi/lvs/${design_name}.spice || echo "WARNING: Could not copy design_extracted.spice! File not found?"
 
 # 4. Copy the verilog gate-level netlist include pg terms
 cp inputs/design.vcs.pg.v $rep_root/verilog/gl/${design_name}.v || echo "WARNING: Could not copy design.vcs.pg.v! File not found?"
