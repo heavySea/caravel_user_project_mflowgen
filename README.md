@@ -8,20 +8,33 @@ This repository provides a template ASIC implementation flow for commercial EDA 
 
 Following features have been implemented so far:
 
-- Basic implementation flow for the user_project_wrapper using Synopsys DC for synthesis, Cadence Innovus for PnR, Magic and Netgen for DRC and LVS
+- Basic implementation flow for the user_project_wrapper and user_proj_example using Synopsys DC for synthesis, Cadence Innovus for PnR, Magic and Netgen for DRC and LVS
 - Initial floorplan file for the user_project_wrapper for full power/ground design capabilities in Cadence Innovus
 - Additional single-command automation to install and setup all repository dependencies
 	+ [Mflowgen](https://github.com/mflowgen/mflowgen)
 	+ [skywater-130nm-adk](https://github.com/heavySea/skywater-130nm-adk) (mflowgen's PDK view) with automated file setup
 	+ PDK, openLane, ... dependencies already provided by the source repository
 - Single-command to build and clean implementation flows using Mflowgen
-- Template implementation flow for the user project wrapper with commercial EDA tools
+- Template implementation flow for the user project example and user project wrapper with commercial and open-source EDA tools:
+
+	* [ :heavy_multiplication_x: ] Implement example project and wrapper together with commercial tools
+		- [ :heavy_check_mark: ] Working mflowgen implementation flow (Recent changes not tested yet)
+		- [ :heavy_multiplication_x: ] DRC, LVS, XOR (Recent changes not tested yet)
+		- [ :question: ] Full-Chip GL Simulation
+		- [ :heavy_multiplication_x: ] Precheck-Pass (Failed due to DRC & LVS problems)
+	* [ :construction: ] Implement example project tools as macro and used in wrapper with commercial tools
+		- [ :construction: ] Working mflowgen implementation flow (so far only for macro)
+		- [ :construction: ] DRC, LVS, XOR (so far only for macro)
+		- [ :question: ] Full-Chip GL Simulation (not tested)
+		- [ :question: ] Precheck-Pass (not tested)
+	* [ :construction: ] Implement example project tools as macro with commercial tools and used in wrapper with openLane (not started yet)
+
+([ :construction: ]: TBD; :heavy_check_mark:: done; [ :question: ]: untested; [ :heavy_multiplication_x: ]: failed)
 
 Planned features are:
 - Basic RTL and GL simulation flows using Mentor Modelsim and Power Estimation using Synopsys PrimeTime PX/PrimePower
 - TLU+ file generation as done in https://github.com/google/skywater-pdk/pull/185
 - Stable DRC and LVS
-- Template implementation flow for the user project example
 
 ## Installation
 
