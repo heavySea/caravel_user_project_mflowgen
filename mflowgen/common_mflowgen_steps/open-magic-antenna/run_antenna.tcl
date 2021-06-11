@@ -1,18 +1,17 @@
+drc off
+snap internal
+
 lef read rtk-tech-nolicon.lef
 lef read inputs/adk/stdcells.lef
 
 def read design.def
 
-load $::env(design_name)
+load $::env(design_name) -dereference
 
-# Extract for LVS
+# Extract
 extract do local
-extract no capacitance
-extract no coupling
-extract no resisitance
-extract no adjust
-extract unique
-extract
+extract no all
+extract all
 
 antennacheck debug
 antennacheck

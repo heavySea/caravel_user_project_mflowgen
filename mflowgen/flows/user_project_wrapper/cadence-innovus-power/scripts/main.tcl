@@ -34,7 +34,7 @@ set pmesh_top $ADK_POWER_MESH_TOP_LAYER
 #-------------------------------------------------------------------------
 
 set M5_min_width   [dbGet [dbGetLayerByName met5].minWidth]
-set M5_min_spacing [dbGet [dbGetLayerByZ met5].minSpacing]
+set M5_min_spacing [dbGet [dbGetLayerByName met5].minSpacing]
 
 set savedvars(p_ring_width)   [expr 20 * $M5_min_width];   # Arbitrary!
 set savedvars(p_ring_spacing) [expr 24 * $M5_min_spacing]; # Arbitrary!

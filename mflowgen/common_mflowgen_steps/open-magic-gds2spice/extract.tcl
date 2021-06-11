@@ -1,3 +1,4 @@
+drc off
 cif istyle sky130(vendor)
 gds flatten true
 gds read ./inputs/design-merged.gds
