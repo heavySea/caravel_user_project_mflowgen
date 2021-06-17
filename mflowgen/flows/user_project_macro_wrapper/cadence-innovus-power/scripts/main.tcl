@@ -153,6 +153,6 @@ addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
 #-------------------------------------------------------------------------
 # Generate horizontal stdcell preroutes
 # + connect block pg pins
-sroute -nets {vccd1 vssd1} -blockPin all -connectAlignedBlockAndPadPin blockPinAsTarget
+sroute -nets {vccd1 vssd1} -blockPin all
 
 

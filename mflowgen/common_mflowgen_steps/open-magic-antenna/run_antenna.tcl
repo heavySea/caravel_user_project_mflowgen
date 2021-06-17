@@ -1,17 +1,19 @@
-drc off
-snap internal
+# Copied from https://github.com/efabless/caravel/blob/master/gds/antenna_on_gds.tcl
 
-lef read rtk-tech-nolicon.lef
-lef read inputs/adk/stdcells.lef
+gds read inputs/design_merged.gds
 
-def read design.def
+load $::env(design_name)
 
-load $::env(design_name) -dereference
-
-# Extract
+select top cell
 extract do local
-extract no all
-extract all
+extract no capacitance
+extract no coupling
+extract no resisitance
+extract no adjust
+extract unique
+extract
+
+feedback save ./outputs/antenna.feedback.txt
 
 antennacheck debug
 antennacheck

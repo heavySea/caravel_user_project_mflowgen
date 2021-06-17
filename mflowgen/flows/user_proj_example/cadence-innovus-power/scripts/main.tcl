@@ -33,7 +33,7 @@ set pmesh_top $ADK_POWER_MESH_TOP_LAYER
 # Power Ring
 #-------------------------------------------------------------------------
 
-addRing -nets {vssd1 vccd1} -type core_rings -follow core   \
+#addRing -nets {vssd1 vccd1} -type core_rings -follow core   \
         -layer [list top  $pmesh_top bottom $pmesh_top  \
                      left $pmesh_bot right  $pmesh_bot] \
         -width $savedvars(p_ring_width)                 \
@@ -80,7 +80,7 @@ addStripe -nets {vssd1 vccd1} -layer $pmesh_bot -direction vertical \
     -max_same_layer_jog_length $pmesh_bot_str_pitch             \
     -padcore_ring_bottom_layer_limit $pmesh_bot                 \
     -padcore_ring_top_layer_limit $pmesh_top                    \
-    -start [expr $pmesh_bot_str_pitch]
+    -extend_to design_boundary -create_pins 1
 
 
 #-------------------------------------------------------------------------
@@ -108,7 +108,7 @@ setAddStripeMode -stacked_via_bottom_layer $pmesh_bot \
                  -break_at block_ring
 
 # Add the stripes
-addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
+#addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
     -width $pmesh_top_str_width                                   \
     -spacing $pmesh_top_str_intraset_spacing                      \
     -set_to_set_distance $pmesh_top_str_interset_pitch            \
@@ -122,4 +122,5 @@ addStripe -nets {vssd1 vccd1} -layer $pmesh_top -direction horizontal \
 # Stdcell power rail preroute
 #-------------------------------------------------------------------------
 # Generate horizontal stdcell preroutes
-sroute -nets {vccd1 vssd1} -connect { corePin floatingStripe}
+sroute  -nets {vccd1 vssd1} -connect { corePin floatingStripe} \
+        -corePinTarget boundaryWithPin

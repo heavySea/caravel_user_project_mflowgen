@@ -49,7 +49,8 @@ def construct():
     'design_name'    : 'user_project_wrapper',
     'topographical'  : False,
     'saif_instance'  : '',
-    'clock_period'   : 10.0 
+    'clock_period'   : 10.0,
+    'add_fillers'    : False
   }
 
   adk_parameters = {
@@ -160,6 +161,7 @@ def construct():
   pnr_steps["iflow"].extend_inputs(['setup.tcl'])
   pnr_steps["iflow"].extend_inputs(['user_project_wrapper.def'])
   pnr_steps["init"].extend_inputs(['user_project_wrapper.def', 'floorplan.tcl'])
+  pnr_steps["signoff"].extend_inputs(['user_proj_example.gds.gz'])
 
   dc.extend_inputs(['user_proj_example_TT.db'])
   # Remove DC clock gating post-condition
@@ -216,6 +218,7 @@ def construct():
   g.connect_by_name( example_macro,  dc                                       )
   g.connect_by_name( example_macro,  pnr_steps["iflow"]                       )
   g.connect_by_name( example_macro,  pnr_steps["init"]                        )
+  g.connect_by_name( example_macro,  pnr_steps["signoff"]                     )
   
   
   connect_ports_to_step_set( g, pnr_steps["iflow"], pnr_steps                 )
