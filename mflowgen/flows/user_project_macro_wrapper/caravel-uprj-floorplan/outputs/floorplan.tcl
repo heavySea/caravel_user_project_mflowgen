@@ -3,3 +3,5 @@ create_relative_floorplan -ref_type core_boundary -horizontal_edge_separate {3  
 snapFPlan -block
 # create placement blockage for easier pin routing
 addHaloToBlock -snapToSite 10 10 10 10 mprj
+
+

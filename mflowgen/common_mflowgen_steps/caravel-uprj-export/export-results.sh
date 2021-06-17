@@ -25,3 +25,7 @@ cp inputs/design_extracted.spice $rep_root/spi/lvs/${design_name}.spice || echo 
 
 # 4. Copy the verilog gate-level netlist include pg terms
 cp inputs/design.vcs.pg.v $rep_root/verilog/gl/${design_name}.v || echo "WARNING: Could not copy design.vcs.pg.v! File not found?"
+
+# 5. Copy the timing libraries
+cp inputs/design.lib $rep_root/timing/${design_name}.lib || echo "WARNING: Could not copy design.lib! File not found?"
+cp inputs/design.db $rep_root/timing/${design_name}.db 	 || echo "WARNING: Could not copy design.db! File not found?"

@@ -10,10 +10,6 @@ name: design-rtl
 
 outputs:
   - design.v
-  - design_macro.v
-  # synopsys dc read_design.tcl modification
-  - read-design.tcl
- 
 #-------------------------------------------------------------------------
 # Commands
 #------------------------------------------------------------------------- 
@@ -23,5 +19,4 @@ commands:
   - cat ../../../verilog/rtl/user_project_wrapper.v >> outputs/design.v
   # fix all default_nettype non compiler directives
   - sed -i "s/default_nettype none/default_nettype wire/g" outputs/design.v
-  # Copy GL netlist
-  - cp ../../../verilog/gl/user_proj_example.v outputs/design_macro.v
+

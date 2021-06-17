@@ -18,12 +18,14 @@ Following features have been implemented so far:
 - Template implementation flow for the user project example and user project wrapper with commercial and open-source EDA tools:
 
 	* [ :heavy_multiplication_x: ] Implement example project and wrapper together with commercial tools
-		- [ :heavy_check_mark: ] Working mflowgen implementation flow (Recent changes not tested yet)
-		- [ :heavy_multiplication_x: ] DRC, LVS, XOR (Recent changes not tested yet)
-		- [ :question: ] Full-Chip GL Simulation
-		- [ :heavy_multiplication_x: ] Precheck-Pass (Failed due to DRC & LVS problems)
+		- [ :heavy_check_mark: ] Working mflowgen implementation flow
+		- [ :question:] DRC - licon.8a DRV in buf_16 
+		- [ :heavy_check_mark: ] LVS
+		- [ :heavy_check_mark: ] Antenna
+		- [ :heavy_check_mark: ] Full-Chip GL Simulation (with the caravel RTL model)
+		- [ :x: ] Precheck-Pass (Failed due to magic xor check not finishing)
 	* [ :construction: ] Implement example project tools as macro and used in wrapper with commercial tools
-		- [ :construction: ] Working mflowgen implementation flow (so far only for macro)
+		- [ :heavy_check_mark: ] Working mflowgen implementation flow for macro and wrapper
 		- [ :construction: ] DRC, LVS, XOR (so far only for macro)
 		- [ :question: ] Full-Chip GL Simulation (not tested)
 		- [ :question: ] Precheck-Pass (not tested)

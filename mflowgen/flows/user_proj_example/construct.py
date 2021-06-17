@@ -83,6 +83,9 @@ def construct():
   postroute      = Step( 'cadence-innovus-postroute',               default=True )
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   
+  # Macro timing library generation
+  libdbgen       = Step( 'synopsys-ptpx-genlibdb',                  default=True )
+  
 
   #-----------------------------------------------------------------------
   # Custom nodes
@@ -153,6 +156,7 @@ def construct():
   g.add_step( postroute      )
   g.add_step( postroute_hold )
   g.add_step( signoff        )
+  g.add_step( libdbgen       )
 
   g.add_step( magic_drc       )
   g.add_step( magic_antenna   )
@@ -180,6 +184,7 @@ def construct():
   g.connect_by_name( adk,            postroute      )
   g.connect_by_name( adk,            postroute_hold )
   g.connect_by_name( adk,            signoff        )
+  g.connect_by_name( adk,            libdbgen       )
   
   g.connect_by_name( adk,            magic_drc      )
   g.connect_by_name( adk,            magic_antenna  )
@@ -220,6 +225,8 @@ def construct():
   g.connect_by_name( postroute,      postroute_hold )
   g.connect_by_name( postroute_hold, signoff        )
 
+  g.connect_by_name( signoff,        libdbgen       )
+
   g.connect_by_name( signoff,         magic_drc     )
   g.connect_by_name( signoff,         magic_antenna )
 
@@ -235,6 +242,7 @@ def construct():
 
   g.connect_by_name( signoff,         export_result   )
   g.connect_by_name( magic_gds2spice, export_result   )
+  g.connect_by_name( libdbgen,        export_result   )
 
   #-----------------------------------------------------------------------
   # Parameterize

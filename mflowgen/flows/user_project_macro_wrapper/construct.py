@@ -24,6 +24,17 @@ import os
 
 from mflowgen.components import Graph, Step
 
+def add_step_set_to_graph(graph, step_dict):
+  for step in step_dict.values():
+    graph.add_step(step)
+    
+
+def connect_ports_to_step_set(graph, output_step, input_dict):
+  for step in input_dict.values():
+    if output_step.get_name()!=step.get_name():
+      graph.connect_by_name(output_step, step)
+
+
 def construct():
 
   g = Graph()
@@ -76,14 +87,19 @@ def construct():
   #-----------------------------------------------------------------------
 
   dc             = Step( 'synopsys-dc-synthesis',                   default=True )
-  iflow          = Step( 'cadence-innovus-flowsetup',               default=True )
-  init           = Step( 'cadence-innovus-init',                    default=True )
-  place          = Step( 'cadence-innovus-place',                   default=True )
-  cts            = Step( 'cadence-innovus-cts',                     default=True )
-  postcts_hold   = Step( 'cadence-innovus-postcts_hold',            default=True )
-  route          = Step( 'cadence-innovus-route',                   default=True )
-  postroute      = Step( 'cadence-innovus-postroute',               default=True )
-  postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
+
+  # To make adding nodes repeatiatly a litte bit easier pack all the innovus step
+  # in a dictionary
+  pnr_steps = {
+    "iflow"           : Step( 'cadence-innovus-flowsetup',               default=True ),
+    "init"            : Step( 'cadence-innovus-init',                    default=True ),
+    "place"           : Step( 'cadence-innovus-place',                   default=True ),
+    "cts"             : Step( 'cadence-innovus-cts',                     default=True ),
+    "postcts_hold"    : Step( 'cadence-innovus-postcts_hold',            default=True ),
+    "route"           : Step( 'cadence-innovus-route',                   default=True ),
+    "postroute"       : Step( 'cadence-innovus-postroute',               default=True ),
+    "postroute_hold"  : Step( 'cadence-innovus-postroute_hold',          default=True )
+  }
   
 
   #-----------------------------------------------------------------------
@@ -112,7 +128,7 @@ def construct():
   # netgen_lvs_def.set_name('netgen-lvs-def')
 
   # Custom signoff to flatten netlists for LVS netlist export
-  signoff         = Step( common_SKY130_steps + '/cadence-innovus-signoff')
+  pnr_steps["signoff"]    = Step( common_SKY130_steps + '/cadence-innovus-signoff')
 
   # Export the results to the MWP caravel directory strucutures
   export_result   = Step( common_SKY130_steps + '/caravel-uprj-export'    )
@@ -124,8 +140,8 @@ def construct():
   # Uses a copy of the common 'caravel-uprj-floorplan' 
   # step in 'common_SKY130_steps, but also adds a floorplan.tcl script
   # for placement guide instructions
-  caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
-  power                   = Step ( this_dir + '/cadence-innovus-power'  )
+  caravel_upr_floorplan                = Step ( this_dir + '/caravel-uprj-floorplan' )
+  pnr_steps["power"]                   = Step ( this_dir + '/cadence-innovus-power'  )
    
 
   #-----------------------------------------------------------------------
@@ -138,47 +154,39 @@ def construct():
   # if you want to place macros during the floorplan step, define a new 
   # floorplan.tcl script and give it the init step as input
   init_order = caravel_upr_floorplan.get_param('iInit_order')
-  init.update_params({'order' : init_order})
+  pnr_steps["init"].update_params({'order' : init_order})
 
   # Add setup.tcl to inputs of iflow step and initial .def file to inputs of init step
-  iflow.extend_inputs(['setup.tcl'])
-  iflow.extend_inputs(['user_project_wrapper.def'])
-  init.extend_inputs(['user_project_wrapper.def', 'floorplan.tcl'])
+  pnr_steps["iflow"].extend_inputs(['setup.tcl'])
+  pnr_steps["iflow"].extend_inputs(['user_project_wrapper.def'])
+  pnr_steps["init"].extend_inputs(['user_project_wrapper.def', 'floorplan.tcl'])
 
-  dc.extend_inputs(['design_macro.v', 'read-design.tcl'])
-  iflow.extend_inputs(['user_proj_example.lef'])
-  init.extend_inputs(['user_proj_example.lef'])
+  dc.extend_inputs(['user_proj_example_TT.db'])
   # Remove DC clock gating post-condition
   dc.set_postconditions(dc.get_postconditions()[:-1])
+
+  # Add macro lef and timing lib to pnr steps
+  for pnr_s in pnr_steps.values(): 
+    pnr_s.extend_inputs(['user_proj_example.lef', 'user_proj_example_TT.lib'])
+  
 
   #-----------------------------------------------------------------------
   # Graph -- Add nodes
   #-----------------------------------------------------------------------
 
-  g.add_step( rtl            )
-  g.add_step( constraints    )
-  g.add_step( example_macro  )
-  g.add_step( dc             )
-  g.add_step( caravel_upr_floorplan)
-  g.add_step( iflow          )
-  g.add_step( init           )
-  g.add_step( power          )
-  g.add_step( place          )
-  g.add_step( cts            )
-  g.add_step( postcts_hold   )
-  g.add_step( route          )
-  g.add_step( postroute      )
-  g.add_step( postroute_hold )
-  g.add_step( signoff        )
+  g.add_step( rtl                         )
+  g.add_step( constraints                 )
+  g.add_step( example_macro               )
+  g.add_step( dc                          )
+  g.add_step( caravel_upr_floorplan       )
+  add_step_set_to_graph( g, pnr_steps     )
 
-  g.add_step( magic_drc       )
-  g.add_step( magic_antenna   )
-  # g.add_step( magic_def2spice )
-  g.add_step( magic_gds2spice )
-  # g.add_step( netgen_lvs_def  )
-  g.add_step( netgen_lvs_gds  )
+  g.add_step( magic_drc                   )
+  g.add_step( magic_antenna               )
+  g.add_step( magic_gds2spice             )
+  g.add_step( netgen_lvs_gds              )
 
-  g.add_step( export_result  )
+  g.add_step( export_result               )
 
   #-----------------------------------------------------------------------
   # Graph -- Add edges
@@ -186,76 +194,52 @@ def construct():
 
   # Connect by name
 
-  g.connect_by_name( adk,            dc             )
-  g.connect_by_name( adk,            iflow          )
-  g.connect_by_name( adk,            init           )
-  g.connect_by_name( adk,            power          )
-  g.connect_by_name( adk,            place          )
-  g.connect_by_name( adk,            cts            )
-  g.connect_by_name( adk,            postcts_hold   )
-  g.connect_by_name( adk,            route          )
-  g.connect_by_name( adk,            postroute      )
-  g.connect_by_name( adk,            postroute_hold )
-  g.connect_by_name( adk,            signoff        )
+  g.connect_by_name( adk,            dc                                       )
+  connect_ports_to_step_set( g, adk, pnr_steps                                )
+  g.connect_by_name( adk,            magic_drc                                )
+  g.connect_by_name( adk,            magic_antenna                            )
+  g.connect_by_name( adk,            magic_gds2spice                          )
+  g.connect_by_name( adk,            netgen_lvs_gds                           )
+
+  g.connect_by_name( rtl,            dc                                       )
+  g.connect_by_name( constraints,    dc                                       )
+
+  g.connect_by_name( dc,             pnr_steps["iflow"]                       )
+  g.connect_by_name( dc,             pnr_steps["init"]                        )
+  g.connect_by_name( dc,             pnr_steps["power"]                       )
+  g.connect_by_name( dc,             pnr_steps["place"]                       )
+  g.connect_by_name( dc,             pnr_steps["cts"]                         )
   
-  g.connect_by_name( adk,            magic_drc      )
-  g.connect_by_name( adk,            magic_antenna  )
+  g.connect_by_name( caravel_upr_floorplan, pnr_steps["iflow"]                )
+  g.connect_by_name( caravel_upr_floorplan, pnr_steps["init"]                 )
 
-  # g.connect_by_name( adk,            magic_def2spice)
-  # g.connect_by_name( adk,            netgen_lvs_def )
-  g.connect_by_name( adk,            magic_gds2spice)
-  g.connect_by_name( adk,            netgen_lvs_gds )
-
-  g.connect_by_name( rtl,            dc             )
-  g.connect_by_name( constraints,    dc             )
-
-  g.connect_by_name( dc,             iflow          )
-  g.connect_by_name( dc,             init           )
-  g.connect_by_name( dc,             power          )
-  g.connect_by_name( dc,             place          )
-  g.connect_by_name( dc,             cts            )
+  g.connect_by_name( example_macro,  dc                                       )
+  g.connect_by_name( example_macro,  pnr_steps["iflow"]                       )
+  g.connect_by_name( example_macro,  pnr_steps["init"]                        )
   
-  g.connect_by_name( caravel_upr_floorplan, iflow   )
-  g.connect_by_name( caravel_upr_floorplan, init    )
-
-  g.connect_by_name( example_macro,  iflow          )
-  g.connect_by_name( example_macro,  init           )
   
-    
-  g.connect_by_name( iflow,          init           )
-  g.connect_by_name( iflow,          power          )
-  g.connect_by_name( iflow,          place          )
-  g.connect_by_name( iflow,          cts            )
-  g.connect_by_name( iflow,          postcts_hold   )
-  g.connect_by_name( iflow,          route          )
-  g.connect_by_name( iflow,          postroute      )
-  g.connect_by_name( iflow,          postroute_hold )
-  g.connect_by_name( iflow,          signoff        )
+  connect_ports_to_step_set( g, pnr_steps["iflow"], pnr_steps                 )
 
-  g.connect_by_name( init,           power          )
-  g.connect_by_name( power,          place          )
-  g.connect_by_name( place,          cts            )
-  g.connect_by_name( cts,            postcts_hold   )
-  g.connect_by_name( postcts_hold,   route          )
-  g.connect_by_name( route,          postroute      )
-  g.connect_by_name( postroute,      postroute_hold )
-  g.connect_by_name( postroute_hold, signoff        )
+  g.connect_by_name( pnr_steps["init"],           pnr_steps["power"]          )
+  g.connect_by_name( pnr_steps["power"],          pnr_steps["place"]          )
+  g.connect_by_name( pnr_steps["place"],          pnr_steps["cts"]            )
+  g.connect_by_name( pnr_steps["cts"],            pnr_steps["postcts_hold"]   )
+  g.connect_by_name( pnr_steps["postcts_hold"],   pnr_steps["route"]          )
+  g.connect_by_name( pnr_steps["route"],          pnr_steps["postroute"]      )
+  g.connect_by_name( pnr_steps["postroute"],      pnr_steps["postroute_hold"] )
+  g.connect_by_name( pnr_steps["postroute_hold"], pnr_steps["signoff"]        )
 
-  g.connect_by_name( signoff,         magic_drc     )
-  g.connect_by_name( signoff,         magic_antenna )
+  g.connect_by_name( pnr_steps["signoff"],         magic_drc                  )
+  g.connect_by_name( pnr_steps["signoff"],         magic_antenna              )
 
-  # g.connect_by_name( signoff,         magic_def2spice )
-  # g.connect_by_name( signoff,         netgen_lvs_def  )
-  # g.connect_by_name( magic_def2spice, netgen_lvs_def  )
-
-  g.connect_by_name( signoff,         magic_gds2spice )
-  g.connect_by_name( signoff,         netgen_lvs_gds  )
-  g.connect_by_name( magic_gds2spice, netgen_lvs_gds  )
+  g.connect_by_name( pnr_steps["signoff"],         magic_gds2spice            )
+  g.connect_by_name( pnr_steps["signoff"],         netgen_lvs_gds             )
+  g.connect_by_name( magic_gds2spice, netgen_lvs_gds                          )
 
   
 
-  g.connect_by_name( signoff,         export_result   )
-  g.connect_by_name( magic_gds2spice, export_result   )
+  g.connect_by_name( pnr_steps["signoff"],         export_result              )
+  g.connect_by_name( magic_gds2spice, export_result                           )
 
   #-----------------------------------------------------------------------
   # Parameterize
