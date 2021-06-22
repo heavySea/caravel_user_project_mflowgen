@@ -9,8 +9,6 @@ name: caravel-uprj-floorplan
 #-------------------------------------------------------------------------
 
 outputs:
-  # DEF file for caravel user project wrapper projcts
-  - user_project_wrapper.def
   # The initial floorplan for the MWP is given as a def file
   # and must given in the foundation flow setup
   # the setup.tcl can be extened by an additional setup.tcl at the input 
@@ -25,9 +23,6 @@ outputs:
 #-------------------------------------------------------------------------
 
 parameters:
-  # which generate script to use?
-  # leave_od_metal True -> leave off-die metal pins and rings
-  leave_od_metal: True
   # overwrite script order parameter of innovus init step 
   # remove floorplanning and pin assignment for now
   iInit_order:
@@ -37,17 +32,3 @@ parameters:
     - add-endcaps-welltaps.tcl
     - make-path-groups.tcl
     - reporting.tcl
-
-
-#-------------------------------------------------------------------------
-# Commands
-#------------------------------------------------------------------------- 
-commands:
-  # this script removes all power stripes and cell-pg connections,
-  # since this is handled by innovus
-  # it requires an input floorplan def file from the last
-  # generated def file of the floorplan stage of openlane
-  
-  - python3 ./generate_init_def.py
-  # a result of the script can be found in this directory
-

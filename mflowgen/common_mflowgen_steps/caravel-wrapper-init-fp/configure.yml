@@ -1,0 +1,28 @@
+#=========================================================================
+# Initial floorplan for the user project wrapper
+#=========================================================================
+
+name: caravel-wrapper-init-fp
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+
+outputs:
+  # DEF file for caravel user project wrapper projcts
+  - user_project_wrapper.def
+
+commands:
+  # this script removes all power stripes and cell-pg connections,
+  # since this is handled by innovus
+  # it requires an input floorplan def file from the last
+  # generated def file of the floorplan stage of openlane
+  
+  - python3 ./generate_init_def.py
+  # a result of the script can be found in this directory
+
+parameters:
+  # which generate script to use?
+  # leave_od_metal True -> leave off-die metal pins and rings
+  # Should not be changed, as the off-die power rings are required!
+  leave_od_metal: True

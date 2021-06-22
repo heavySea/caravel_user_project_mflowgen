@@ -1,20 +1,19 @@
 #=========================================================================
-# construct.py
+# construct.py for the example caravel user project
 #=========================================================================
 # ASIC flow using commercial EDA tools:
-# Synopsys DC for synthesis
-# (Cadence Innovus for Place and Route
-# (Modelsim for Simulation (TODO))
-# Synopsys PrimeTime (+ PX / Power Compiler) for Timing Sign-Off (TODO))
-# Magic for DRC 
-# LVS with netgen
+# - Synopsys DC for synthesis
+# - Cadence Innovus for Place and Route
+# - (Mentor Modelsim for Simulation) (TODO)
+# - (Synopsys PrimeTime (+ PX / Power Compiler) for Timing Sign-Off) (TODO)
+# - Magic for DRC and Antenna Checks 
+# - LVS with netgen
 #
 # This is excepted to be build from the Makefile in the root of the
 # caravel user project repository
 # Otherwise export following enviroment variables:
 #
 # export MFLOWGEN_PATH=/path/to/SKY130_ADK_Repository
-#
 
 # Author : Maximilian Koschay
 # Date   : 09.06.2021
@@ -30,6 +29,7 @@ def construct():
   #-----------------------------------------------------------------------
   # Parameters
   #-----------------------------------------------------------------------
+  # Define parameters that override the default parameters from the steps
 
   # Don't use topographical mode, as long as TLU+ files are missing
   parameters = {
@@ -46,34 +46,34 @@ def construct():
   }
 
   #-----------------------------------------------------------------------
-  # Create nodes
+  # Define some source directories
   #-----------------------------------------------------------------------
 
   this_dir            = os.path.dirname( os.path.abspath( __file__ ) )
   common_SKY130_steps = os.path.dirname( os.path.abspath( __file__ ) ) + '/../../common_mflowgen_steps'
-  print(common_SKY130_steps)
-  # Using an enviroment variable would be better:
-  #common_SKY130_steps = os.env('MFLOWGEN_STEP_PATH')
 
   #-----------------------------------------------------------------------
-  # ADK node
+  # Set the ADK node
   #-----------------------------------------------------------------------
 
   g.set_adk( adk_parameters["adk"] )
   adk = g.get_adk_step()
 
   #-----------------------------------------------------------------------
-  # Design node
+  # Get some design specific steps
   #-----------------------------------------------------------------------
 
   rtl            = Step( this_dir + '/design-rtl'        )
   constraints    = Step( this_dir + '/design-constraints')
 
   #-----------------------------------------------------------------------
-  # Default nodes
+  # Get some default steps from the mflowgen repository
   #-----------------------------------------------------------------------
-
+  
+  # Synthesis step using Synopsys DC
   dc             = Step( 'synopsys-dc-synthesis',                   default=True )
+
+  # PnR steps using Cadence Innovus
   iflow          = Step( 'cadence-innovus-flowsetup',               default=True )
   init           = Step( 'cadence-innovus-init',                    default=True )
   place          = Step( 'cadence-innovus-place',                   default=True )
@@ -83,13 +83,18 @@ def construct():
   postroute      = Step( 'cadence-innovus-postroute',               default=True )
   postroute_hold = Step( 'cadence-innovus-postroute_hold',          default=True )
   
-  # Macro timing library generation
+  # Macro timing library generation using Synopsys PrimeTime
   libdbgen       = Step( 'synopsys-ptpx-genlibdb',                  default=True )
   
 
   #-----------------------------------------------------------------------
-  # Custom nodes
+  # Custom nodes from this repository
   #-----------------------------------------------------------------------
+
+  # Signoff steps:
+
+  # Custom Innovus signoff to flatten netlists for LVS netlist export
+  signoff         = Step( common_SKY130_steps + '/cadence-innovus-signoff')
 
   # Although the Signoff DRC and LVS checks are already included in the
   # mflowgen master branch, there are some special steps required for
@@ -112,25 +117,23 @@ def construct():
   netgen_lvs_gds.set_name('netgen-lvs-gds')
   # netgen_lvs_def.set_name('netgen-lvs-def')
 
-  # Custom signoff to flatten netlists for LVS netlist export
-  signoff         = Step( common_SKY130_steps + '/cadence-innovus-signoff')
+  # Exporting:
 
   # Export the results to the MWP caravel directory strucutures
   export_result   = Step( common_SKY130_steps + '/caravel-uprj-export'    )
 
   #-----------------------------------------------------------------------
-  # Custom nodes - Design specific
+  # Custom nodes for this specific design
   #-----------------------------------------------------------------------
   
-  # Uses a copy of the common 'caravel-uprj-floorplan' 
-  # step in 'common_SKY130_steps, but also adds a floorplan.tcl script
-  # for placement guide instructions
+  # Add steps that provide modifications for the floorplan and power steps 
+  # for the PnR flow
   user_proj_fp    = Step ( this_dir + '/user_proj_example-floorplan' )
   power           = Step ( this_dir + '/cadence-innovus-power'  )
    
 
   #-----------------------------------------------------------------------
-  # Manipulate nodes
+  # Manipulate the default nodes
   #-----------------------------------------------------------------------
   
   # Add foorplan step outputs to flow setup and init step
@@ -188,9 +191,6 @@ def construct():
   
   g.connect_by_name( adk,            magic_drc      )
   g.connect_by_name( adk,            magic_antenna  )
-
-  # g.connect_by_name( adk,            magic_def2spice)
-  # g.connect_by_name( adk,            netgen_lvs_def )
   g.connect_by_name( adk,            magic_gds2spice)
   g.connect_by_name( adk,            netgen_lvs_gds )
 
@@ -230,10 +230,6 @@ def construct():
   g.connect_by_name( signoff,         magic_drc     )
   g.connect_by_name( signoff,         magic_antenna )
 
-  # g.connect_by_name( signoff,         magic_def2spice )
-  # g.connect_by_name( signoff,         netgen_lvs_def  )
-  # g.connect_by_name( magic_def2spice, netgen_lvs_def  )
-
   g.connect_by_name( signoff,         magic_gds2spice )
   g.connect_by_name( signoff,         netgen_lvs_gds  )
   g.connect_by_name( magic_gds2spice, netgen_lvs_gds  )
@@ -247,6 +243,7 @@ def construct():
   #-----------------------------------------------------------------------
   # Parameterize
   #-----------------------------------------------------------------------
+  # Apply the above defined parameters to all stepgs in the graph
   
   g.update_params( adk_parameters )
   g.update_params( parameters )

@@ -1,12 +1,13 @@
 #=========================================================================
-# construct.py
+# construct.py for the caravel user project wrapper without standard cells
 #=========================================================================
 # ASIC flow using commercial EDA tools:
-# Synopsys DC for synthesis
-# Cadence Innovus for Place and Route
-# Synopsys PrimeTime (+ PX / Power Compiler) for Timing Sign-Off
-# Magic for DRC 
-# LVS with netgen
+# - Synopsys DC for synthesis
+# - Cadence Innovus for Place and Route
+# - (Mentor Modelsim for Simulation) (TODO)
+# - (Synopsys PrimeTime (+ PX / Power Compiler) for Timing Sign-Off) (TODO)
+# - Magic for DRC and Antenna Checks 
+# - LVS with netgen
 #
 # This is excepted to be build from the Makefile in the root of the
 # caravel user project repository
@@ -15,7 +16,7 @@
 # export MFLOWGEN_PATH=/path/to/SKY130_ADK_Repository
 #
 # Wrapper implementation flow that uses the previous build 
-# user_project_example macro 
+# user_proj_example macro! 
 
 # Author : Maximilian Koschay
 # Date   : 11.06.2021
@@ -23,6 +24,10 @@
 import os
 
 from mflowgen.components import Graph, Step
+
+# The PnR steps are packed into an python dictionary
+# Here are some handy helper functions defined to add all steps
+# to the graph and connect all the steps to a given other step
 
 def add_step_set_to_graph(graph, step_dict):
   for step in step_dict.values():
@@ -34,6 +39,7 @@ def connect_ports_to_step_set(graph, output_step, input_dict):
     if output_step.get_name()!=step.get_name():
       graph.connect_by_name(output_step, step)
 
+# The actuall flow specification follows here:
 
 def construct():
 
@@ -42,6 +48,7 @@ def construct():
   #-----------------------------------------------------------------------
   # Parameters
   #-----------------------------------------------------------------------
+  # Define parameters that override the default parameters from the steps
 
   # Don't use topographical mode, as long as TLU+ files are missing
   parameters = {
@@ -59,24 +66,23 @@ def construct():
   }
 
   #-----------------------------------------------------------------------
-  # Create nodes
+  # Define some source directories
   #-----------------------------------------------------------------------
 
   this_dir            = os.path.dirname( os.path.abspath( __file__ ) )
   common_SKY130_steps = os.path.dirname( os.path.abspath( __file__ ) ) + '/../../common_mflowgen_steps'
-  print(common_SKY130_steps)
   # Using an enviroment variable would be better:
   #common_SKY130_steps = os.env('MFLOWGEN_STEP_PATH')
 
   #-----------------------------------------------------------------------
-  # ADK node
+  # Set the ADK node
   #-----------------------------------------------------------------------
 
   g.set_adk( adk_parameters["adk"] )
   adk = g.get_adk_step()
 
   #-----------------------------------------------------------------------
-  # Design node
+  # Get some design specific steps
   #-----------------------------------------------------------------------
 
   rtl            = Step( this_dir + '/design-rtl'        )
@@ -84,12 +90,14 @@ def construct():
   example_macro  = Step( this_dir + '/example-macro')
 
   #-----------------------------------------------------------------------
-  # Default nodes
+  # Get some default steps from the mflowgen repository
   #-----------------------------------------------------------------------
 
+  # Synthesis step using Synopsys DC
   dc             = Step( 'synopsys-dc-synthesis',                   default=True )
 
-  # To make adding nodes repeatiatly a litte bit easier pack all the innovus step
+  # PnR steps using Cadence Innovus
+  # To make adding nodes repeatedly a litte bit easier, pack all the innovus step
   # in a dictionary
   pnr_steps = {
     "iflow"           : Step( 'cadence-innovus-flowsetup',               default=True ),
@@ -104,8 +112,13 @@ def construct():
   
 
   #-----------------------------------------------------------------------
-  # Custom nodes
+  # Custom nodes from this repository
   #-----------------------------------------------------------------------
+
+  # Signoff steps:
+
+  # Custom Innovus signoff to flatten netlists for LVS netlist export
+  pnr_steps["signoff"]    = Step( common_SKY130_steps + '/cadence-innovus-signoff')
 
   # Although the Signoff DRC and LVS checks are already included in the
   # mflowgen master branch, there are some special steps required for
@@ -115,7 +128,7 @@ def construct():
 
   # DRC  
   magic_drc       = Step( common_SKY130_steps + '/open-magic-drc'        )
-  # Antenna DRC
+  # Antenna checks
   magic_antenna   = Step( common_SKY130_steps + '/open-magic-antenna'        )
 
   # LVS can either use GDS or DEF as source for spice generation
@@ -128,27 +141,38 @@ def construct():
   netgen_lvs_gds.set_name('netgen-lvs-gds')
   # netgen_lvs_def.set_name('netgen-lvs-def')
 
-  # Custom signoff to flatten netlists for LVS netlist export
-  pnr_steps["signoff"]    = Step( common_SKY130_steps + '/cadence-innovus-signoff')
+  # Export:  
 
   # Export the results to the MWP caravel directory strucutures
   export_result   = Step( common_SKY130_steps + '/caravel-uprj-export'    )
 
   #-----------------------------------------------------------------------
-  # Custom nodes - Design specific
+  # Custom nodes for this specific design
   #-----------------------------------------------------------------------
   
-  # Uses a copy of the common 'caravel-uprj-floorplan' 
-  # step in 'common_SKY130_steps, but also adds a floorplan.tcl script
-  # for placement guide instructions
-  caravel_upr_floorplan                = Step ( this_dir + '/caravel-uprj-floorplan' )
-  pnr_steps["power"]                   = Step ( this_dir + '/cadence-innovus-power'  )
+  # The outline and pin positions of the wrapper must be exactly as defined
+  # by the caravel 
+  # Use an edited DEF file as initial floorplan
+  wrapper_init_floorplan  = Step( common_SKY130_steps + '/caravel-wrapper-init-fp')
+
+
+  # Add steps that provide modifications for the floorplan and power steps 
+  # for the PnR flow
+  caravel_upr_floorplan   = Step ( this_dir + '/caravel-uprj-floorplan' )
+  pnr_steps["power"]      = Step ( this_dir + '/cadence-innovus-power'  )
    
 
   #-----------------------------------------------------------------------
-  # Manipulate nodes
+  # Manipulate the default nodes
   #-----------------------------------------------------------------------
   
+  # Add the example project macro timing library to the synthesis step
+  dc.extend_inputs(['user_proj_example_TT.db'])
+  # Remove DC clock gating post-condition, since there are not stdcells to
+  # be power-gated
+  dc.set_postconditions(dc.get_postconditions()[:-1])
+
+
   # since the initial floorplan including io locations and power rings is 
   # already given by the initial def file, the floorplan script and
   # io_placement step is skiped
@@ -161,11 +185,9 @@ def construct():
   pnr_steps["iflow"].extend_inputs(['setup.tcl'])
   pnr_steps["iflow"].extend_inputs(['user_project_wrapper.def'])
   pnr_steps["init"].extend_inputs(['user_project_wrapper.def', 'floorplan.tcl'])
-  pnr_steps["signoff"].extend_inputs(['user_proj_example.gds.gz'])
 
-  dc.extend_inputs(['user_proj_example_TT.db'])
-  # Remove DC clock gating post-condition
-  dc.set_postconditions(dc.get_postconditions()[:-1])
+  # Add the example project macro GDS for final GDS merging
+  pnr_steps["signoff"].extend_inputs(['user_proj_example.gds.gz'])
 
   # Add macro lef and timing lib to pnr steps
   for pnr_s in pnr_steps.values(): 
@@ -180,6 +202,7 @@ def construct():
   g.add_step( constraints                 )
   g.add_step( example_macro               )
   g.add_step( dc                          )
+  g.add_step( wrapper_init_floorplan      )
   g.add_step( caravel_upr_floorplan       )
   add_step_set_to_graph( g, pnr_steps     )
 
@@ -211,7 +234,9 @@ def construct():
   g.connect_by_name( dc,             pnr_steps["power"]                       )
   g.connect_by_name( dc,             pnr_steps["place"]                       )
   g.connect_by_name( dc,             pnr_steps["cts"]                         )
-  
+
+  g.connect_by_name( wrapper_init_floorplan, pnr_steps["iflow"]               )
+  g.connect_by_name( wrapper_init_floorplan, pnr_steps["init"]                )
   g.connect_by_name( caravel_upr_floorplan, pnr_steps["iflow"]                )
   g.connect_by_name( caravel_upr_floorplan, pnr_steps["init"]                 )
 
@@ -244,7 +269,8 @@ def construct():
   #-----------------------------------------------------------------------
   # Parameterize
   #-----------------------------------------------------------------------
-  
+  # Apply the above defined parameters to all stepgs in the graph
+
   g.update_params( adk_parameters )
   g.update_params( parameters )
 
