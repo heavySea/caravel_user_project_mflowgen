@@ -29,7 +29,7 @@ parameters:
   # leave_od_metal True -> leave off-die metal pins and rings
   leave_od_metal: True
   # overwrite script order parameter of innovus init step 
-  # remove floorplanning and pin assignment for now
+  # remove welltaps and pin assignment for now
   iInit_order:
     - main.tcl
     - quality-of-life.tcl

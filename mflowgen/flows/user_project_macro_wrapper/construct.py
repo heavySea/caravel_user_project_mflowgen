@@ -216,10 +216,7 @@ def construct():
   g.connect_by_name( caravel_upr_floorplan, pnr_steps["init"]                 )
 
   g.connect_by_name( example_macro,  dc                                       )
-  g.connect_by_name( example_macro,  pnr_steps["iflow"]                       )
-  g.connect_by_name( example_macro,  pnr_steps["init"]                        )
-  g.connect_by_name( example_macro,  pnr_steps["signoff"]                     )
-  
+  connect_ports_to_step_set( g, example_macro, pnr_steps                      )
   
   connect_ports_to_step_set( g, pnr_steps["iflow"], pnr_steps                 )
 

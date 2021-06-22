@@ -13,3 +13,16 @@ set vars(ground_nets) "vssd1 vssd2 vssa1 vssa2"
 # this will remove the insertion of filler cells
 
 unset vars(filler_cells)
+
+# unset Antenna cell to disable antenna fixing on top level cell
+unset vars(antenna_diode)  
+
+# Set don't use cells after the init step:
+set vars(dont_use_list)               $ADK_DONT_USE_CELLS_OPT
+
+
+# OCV (on-chip variation)
+
+#set vars(enable_ocv)    pre_postroute
+#set vars(enable_si_aware) false
+

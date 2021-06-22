@@ -4,4 +4,9 @@ snapFPlan -block
 # create placement blockage for easier pin routing
 addHaloToBlock -snapToSite 10 10 10 10 mprj
 
+setFlipping s
 
+
+
+# set dont touch to all nets -> do not insert buffers on top level
+set_dont_touch [get_nets *] true

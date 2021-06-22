@@ -59,5 +59,10 @@ set_max_fanout 20 $dc_design_name
 #set_input_transition 1 [all_inputs]
 #set_max_transition 10 [all_outputs]
 
-set_dont_use [get_lib_cells {*/*probec* }]
 
+# Set don't use cells for specific library cells
+set_dont_use [get_lib_cells -quiet $ADK_DONT_USE_CELLS_SYNTH]
+
+
+# Don't add std cells on top wrapper level
+set compile_no_new_cells_at_top_level true
