@@ -1,0 +1,25 @@
+#=========================================================================
+# Example Macro LEF and GDS import
+#=========================================================================
+
+name: example-macro
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+
+outputs:
+  - user_proj_example.lef
+  - user_proj_example.gds.gz
+  - user_proj_example_TT.lib
+  - user_proj_example_TT.db
+ 
+#-------------------------------------------------------------------------
+# Commands
+#------------------------------------------------------------------------- 
+  
+commands:
+  - cp ../../../lef/user_proj_example.lef outputs/user_proj_example.lef
+  - cp ../../../gds/user_proj_example.gds.gz outputs/user_proj_example.gds.gz
+  - cp ../../../timing/user_proj_example.lib outputs/user_proj_example_TT.lib
+  - cp ../../../timing/user_proj_example.db outputs/user_proj_example_TT.db

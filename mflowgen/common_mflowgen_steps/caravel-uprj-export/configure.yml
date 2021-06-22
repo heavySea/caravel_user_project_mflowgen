@@ -17,6 +17,8 @@ inputs:
   - design.lef
   - design_extracted.spice
   - design.vcs.pg.v
+  - design.lib
+  - design.db
 
 
 #-------------------------------------------------------------------------

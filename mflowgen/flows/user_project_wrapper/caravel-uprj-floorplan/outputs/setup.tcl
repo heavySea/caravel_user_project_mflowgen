@@ -8,4 +8,6 @@ set vars(def_files)                  inputs/user_project_wrapper.def
 set vars(power_nets)  "vccd1 vccd2 vdda1 vdda2"
 set vars(ground_nets) "vssd1 vssd2 vssa1 vssa2"
 
+# Set don't use cells after the init step:
+set vars(dont_use_list)               $ADK_DONT_USE_CELLS_OPT
 

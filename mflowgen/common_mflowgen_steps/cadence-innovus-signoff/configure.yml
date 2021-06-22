@@ -61,9 +61,11 @@ commands:
 
 parameters:
   order:
+    - fill-decap.tcl
     - main.tcl
     - generate-results.tcl
     - reporting.tcl
+  add_fillers: True
 
 #-------------------------------------------------------------------------
 # Debug
