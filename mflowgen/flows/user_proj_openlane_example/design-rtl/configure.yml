@@ -1,0 +1,22 @@
+#=========================================================================
+# Design RTL node
+#=========================================================================
+
+name: design-rtl
+
+#-------------------------------------------------------------------------
+# Inputs and Outputs
+#-------------------------------------------------------------------------
+
+outputs:
+  - design.v
+ 
+#-------------------------------------------------------------------------
+# Commands
+#------------------------------------------------------------------------- 
+  
+commands:
+  - cp ../../../caravel/verilog/rtl/defines.v outputs/design.v
+  - cat ../../../verilog/rtl/user_proj_example.v >> outputs/design.v
+  # fix all default_nettype non compiler directives
+  - sed -i "s/default_nettype none/default_nettype wire/g" outputs/design.v
