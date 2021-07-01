@@ -16,9 +16,10 @@
 # aspect ratio (height:width). An aspect ratio of 2.0 here will make a
 # rectangular chip with a height that is twice the width.
 
-set core_aspect_ratio   1.00; # Aspect ratio 1.0 for a square chip
-# Placement density of 60% is reasonable for 4 useable metal layers
-set core_density_target 0.6; 
+set core_aspect_ratio   2.00; # Aspect ratio 1.0 for a square chip
+# the density could be much higher, but the macro would be to small and
+# either the power or ground net would not be connected in the openlane flow
+set core_density_target 0.40; # Placement density of 70% is reasonable
 
 
 
