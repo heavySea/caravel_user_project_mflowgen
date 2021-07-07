@@ -30,7 +30,7 @@ Following features have been implemented so far:
 		- [ :heavy_check_mark: ] LVS
 		- [ :heavy_check_mark: ] Antenna
 		- [ :heavy_check_mark: ] Full-Chip GL Simulation (with the caravel RTL model)
-		- [ :x: ] Precheck-Pass (Failed due to magic xor check not finishing)
+		- [ :x: ] Precheck passed (Failed due to magic xor check not finishing)
 	* [ :construction: ] Implement example project tools as macro and used in wrapper with commercial tools
 		```
 		# Build with
@@ -40,8 +40,18 @@ Following features have been implemented so far:
 		- [ :heavy_check_mark: ] Working mflowgen implementation flow for macro and wrapper
 		- [ :heavy_check_mark: ] DRC, LVS, Antenna
 		- [ :heavy_check_mark: ] Full-Chip GL Simulation (with the caravel RTL model)
-		- [ :heavy_check_mark: ] Precheck-Pass
-	* [ :construction: ] Implement example project tools as macro with commercial tools and used in wrapper with openLane (not started yet)
+		- [ :heavy_check_mark: ] Precheck passed
+	* [ :construction: ] Implement example project tools as macro with commercial tools and used in wrapper with openLane
+		- [ :heavy_check_mark: ] Working mflowgen implementation flow for macro
+			
+			Uses only up to metal 4 to be integrated in the openlane flow; contains only followpins and vertical stripes
+		- [ :heavy_check_mark: ] Macro DRC, LVS, Antenna
+		- [ :heavy_multiplication_x: ] Openlane wrapper hardening failes
+			+ Either "Illegal overlap" errors during DEf2Spice Extraction when rectangular OBS is specified in LEF like mentioned [here](https://skywater-pdk.slack.com/archives/C016H8WJMBR/p1623645309353200)
+			+ DRC error "Metal5 width < 1.6um (met5.1)" around met5 vias over macro already mentioned [here](https://skywater-pdk.slack.com/archives/C016YSAP6TZ/p1622211120130400)
+		- [ :heavy_multiplication_x: ] Openlane wrapper LVS, DRC, Antenna
+		- [ :heavy_multiplication_x: ] Openlane wrapper full-chip GL simulation
+		- [ :heavy_multiplication_x: ] Precheck passed
 
 ([ :construction: ]: TBD; :heavy_check_mark:: done; [ :question: ]: untested; [ :heavy_multiplication_x: ]: failed)
 
@@ -389,7 +399,7 @@ For this, edit following lines in ($CARAVEL_ROOT)/verilog/rtl/caravel\_netlist.v
 //`endif
 ```
 
-## Flow specification details
+## Flow specification details and results
 
 Follows soon. For now only some pretty pictures
 
@@ -407,10 +417,19 @@ Follows soon. For now only some pretty pictures
 ![GDS of the flat flow of example project and wrapper in Innovus](./docs/pictures/flat_wrapper_full.gif)
 ![GDS of the flat flow of example project and wrapper in Innovus](./docs/pictures/flat_wrapper_zoomed.gif)
 
+### Innovus example user project + Openlane wrapper
+Innovus example user project
+
+![GDS of the example project in Innovus for wrapper in Openlane](./docs/pictures/innovus_macro_for_openlane.png)
+
+Openlane Wrapper
+
+![GDS of the wrapper in Openlane with macro from Innovus](./docs/pictures/user_project_wrapper_openlane.png)
+
 ## Known problems
 
 - XOR pre-checks failed with the flat `user_project_wrapper` flow, because magic hangs during the deletion of the wrapper content 
-- Sser-grid not set properly in Innovus for the wrapper
+- User-Grid not set properly in Innovus for the wrapper?
 
 ## Contributions
 
